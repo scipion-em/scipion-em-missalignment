@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+import os
+
 import pwem
 from pyworkflow import TOMO
 
 from missalignment.constants import V0_2_0, MISSALIGNMENT_ENV_ACTIVATION, MISSALIGNMENT_DEFAULT_ACTIVATION_CMD, \
     MISSALIGNMENT, MISSALIGNMENT_DEFAULT_VERSION, MISSALIGNMENT_ENV_NAME, PYTHON_VERSION, CUDA_TOOLKIT_VERSION, \
     V2_8_0, PYTHON_VERSION, V0_11, TORCH_VERSION, TORCH_PROJECTORS_VERSION
+from pyworkflow.utils import Environ
 
 _logo = "icon.png"
 __version__ = '3.0.0'
@@ -74,6 +77,13 @@ class Plugin(pwem.Plugin):
     def getEnviron(cls):
         """ Set up the environment variables needed to launch miss-alignment. """
         environ = Environ(os.environ)
+        if 'PYTHONPATH' in environ:
+            # this is required for python virtual env to work
+            del environ['PYTHONPATH']
+        # Recommended in docs/usage.md: avoid thread overwriting
+        environ['OMP_NUM_THREADS'] = '1'
+        environ['MKL_NUM_THREADS'] = '1'
+        return environ
 
 
     @classmethod
