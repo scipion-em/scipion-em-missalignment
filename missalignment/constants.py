@@ -25,7 +25,6 @@
 # *
 # **************************************************************************
 MISSALIGNMENT = 'missalignment'
-MISSALIGNMENT_HOME = 'MISSALIGNMENT_HOME'
 
 # Supported versions
 V0_2_0 = '0.2.0'
