@@ -51,8 +51,6 @@ class ProtMissalignmentTraining(EMProtocol):
     # --------------------------- DEFINE param functions ----------------------
     def _defineParams(self,fomr):
         form.addSection(label=Message.LABEL_INPUT)
-        form.addParam('config_file', StringParam,
-                      label='Configuration File (.yaml)',
-                      important=True,)
+
 
 
