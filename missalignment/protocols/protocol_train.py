@@ -30,7 +30,6 @@ from enum import Enum
 from missalignment.constants import IN_TS_SET, GLOBAL
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
-from pyworkflow.gui import form
 
 from pyworkflow.protocol import PointerParam, EnumParam, IntParam, LEVEL_ADVANCED, FloatParam, StringParam
 from pyworkflow.utils import Message
@@ -66,7 +65,7 @@ class ProtMissalignmentTraining(EMProtocol):
                       important=True,
                       help='Tilt-series with a coarse alignment.')
 
-        form.addSection('Alignment')
+        form.addSection(label='Alignment')
         group = form.addGroup('Iterations')
         form.addParam('num_iterations', IntParam,
                       label='Number of iterations',
@@ -106,7 +105,7 @@ class ProtMissalignmentTraining(EMProtocol):
                       default=0.1,
                       help='Tolerated overlap between patches used for optimizing the alignment.')
 
-        form.addSection('Training Parameters')
+        form.addSection(label='Training Parameters')
         form.addParam('learning_rate', FloatParam,
                       label='Learning rate',
                       levelExpert=LEVEL_ADVANCED,
