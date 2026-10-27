@@ -30,9 +30,12 @@ from enum import Enum
 from missalignment.constants import IN_TS_SET, GLOBAL
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
-
-from pyworkflow.protocol import PointerParam, EnumParam, IntParam, LEVEL_ADVANCED, FloatParam, StringParam
+from typing import List
+from pyworkflow.protocol import PointerParam, EnumParam, IntParam, LEVEL_ADVANCED, FloatParam, StringParam, GPU_LIST, \
+    GE, BooleanParam
 from pyworkflow.utils import Message
+
+from pyworkflow.object import Boolean
 
 logger = logging.getLogger(__name__)
 
@@ -58,33 +61,35 @@ class ProtMissalignmentTraining(EMProtocol):
         super().__init__(**kwargs)
 
     # --------------------------- DEFINE param functions ----------------------
-    def _defineParams(self, fomr):
+    def _defineParams(self, form):
         form.addSection(label=Message.LABEL_INPUT)
         form.addParam(IN_TS_SET, PointerParam,
+                      pointerClass='SetOfTiltSeries',
                       label='Tilt-series',
                       important=True,
                       help='Tilt-series with a coarse alignment.')
+        form.addParam('preprocess', BooleanParam,
+                      label='Run coarse alignment first?',
+                      default=False,
+                      help='Run a cross-correlation alignment before the iterations. Use it if the '
+                           'tilt-series do not have a coarse alignment yet.')
 
         form.addSection(label='Alignment')
         group = form.addGroup('Iterations')
-        form.addParam('num_iterations', IntParam,
-                      label='Number of iterations',
-                      default=8,
-                      help='Number of iterations.')
-        form.addParam('downsample', StringParam,
-                      label='Downsample per iteration',
-                      default='3 2 1 1 1 1 1 1',
-                      help='One value per iteration, separated by spaces. The number of values is the '
-                           'number of iterations. 3 = images reduced by a factor 3, 1 = full resolution.')
-        form.addParam('alignment', StringParam,
-                      label='Alignment type',
-                      default='A A G G 3x3',
-                      help='One value per iteration, separated by spaces: '
-                           'G = global, '
-                           'A = anchoring, '
-                           '3x3 = grid such as 3x3 (local warping). '
-                           'If there are fewer values than iterations, the last one is repeated. '
-                           'More values than iterations is an error.')
+        group.addParam('downsample', StringParam,
+                       label='Downsample per iteration',
+                       default='3 2 1 1 1 1 1 1',
+                       help='One value per iteration, separated by spaces. The number of values is the '
+                            'number of iterations. 3 = images reduced by a factor 3, 1 = full resolution.')
+        group.addParam('alignment', StringParam,
+                       label='Alignment type',
+                       default='A A G G 3x3 3x3 3x3 3x3',
+                       help='One type per iteration, separated by spaces: '
+                            'G = global, '
+                            'A = anchoring, '
+                            '3x3 = grid such as 3x3 (local warping). '
+                            'If there are fewer values than iterations, the last one is repeated. '
+                            'More values than iterations is an error.')  # TODO create methods to be used when creating the .yaml to convert 3x3 in [3,3], G and A and that guarantee that if downsample>alignment, the remaining downsample values are assigned to the last alignment
 
         form.addParam('batch_size', IntParam,
                       label='Batch size',
@@ -114,3 +119,38 @@ class ProtMissalignmentTraining(EMProtocol):
                       label='Max number of iterations',
                       default=30,
                       help='Absolute maximum of stopping.')
+
+        # TODO missalignment wants gpus ids to be comma separated
+        form.addSection(label='GPU IDs')
+        form.addParam('training_devices', StringParam,
+                      default='0',
+                      label='Training GPUs',
+                      help='GPUs used to train the model, as positions in the list of the available GPUs '
+                           '(0 = the first one), separated by commas. Each entry runs one training process.')
+        form.addParam('reconstruction_devices', StringParam,
+                      default='0',
+                      label='Reconstruction GPUs',
+                      help='One entry per reconstruction worker. An index can be repeated to run '
+                           'several workers on the same GPU (0,0,1,1 = two workers on each of the '
+                           'first two GPUs). Can overlap with the training GPUs.')
+        form.addParam('dataloaders_per_trainer', IntParam,
+                      default=2, validators=[GE(1)],
+                      expertLevel=LEVEL_ADVANCED,
+                      label='Data loaders per training GPU',
+                      help='CPU workers per training GPU.')
+
+        # -------------------------- INFO functions ------------------------------
+        def _validate(self) -> List[str]:
+            errors = []
+
+            downsample = (self.downsample.get() or '').split()
+            alignment = (self.alignment.get() or '').split()
+            iterations = len(downsample)
+
+            if iterations < 1:
+                errors.append('At least one downsampling value is required.')
+            if len(alignment) < 1:
+                errors.append('At least one alignment type is required.')
+            if len(alignment) > iterations:
+                errors.append('The number of alignment types cannot exceed the number of iterations.')
+            return errors
