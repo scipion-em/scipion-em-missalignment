@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class Outputobjects(Enum):
+    # model = MissAlignment_model
     pass
 
 
@@ -71,8 +72,14 @@ class ProtMissalignmentTraining(EMProtocol):
         form.addParam('preprocess', BooleanParam,
                       label='Run coarse alignment first?',
                       default=False,
-                      help='Run a cross-correlation alignment before the iterations. Use it if the '
-                           'tilt-series do not have a coarse alignment yet.')
+                      help='Run a cross-correlation alignment at the start of the run, before running any iteration.'
+                           'Use it if the tilt-series do not have a coarse alignment yet, otherwisw it would throw away'
+                           'the estimated shifts.')
+        form.addParam('prepare_stack', FloatParam,
+                      label='Working pixel size (Å, opt.)',
+                      allowsNull=True,
+                      help='Pixel size (in Å) the tilt-series are rescaled to before training. Increasing it '
+                           'reduces the number of pixels, so training and alignment are faster.')
 
         form.addSection(label='Alignment')
         group = form.addGroup('Iterations')
@@ -90,13 +97,12 @@ class ProtMissalignmentTraining(EMProtocol):
                             '3x3 = grid such as 3x3 (local warping). '
                             'If there are fewer values than iterations, the last one is repeated. '
                             'More values than iterations is an error.')  # TODO create methods to be used when creating the .yaml to convert 3x3 in [3,3], G and A and that guarantee that if downsample>alignment, the remaining downsample values are assigned to the last alignment
-
         form.addParam('batch_size', IntParam,
                       label='Batch size',
                       default=32,
                       help='Amount of patches simultaneously reconstructed in memory.')
         form.addParam('patch_size', IntParam,
-                      label='Patch size',
+                      label='Patch size (pixels)',
                       expertLevel=LEVEL_ADVANCED,
                       default=96,
                       help='Size of the cubic patches (small subtomograms) '
@@ -138,19 +144,81 @@ class ProtMissalignmentTraining(EMProtocol):
                       expertLevel=LEVEL_ADVANCED,
                       label='Data loaders per training GPU',
                       help='CPU workers per training GPU.')
+        # form.addParam('pool_size', IntParam,
+        #               label='Pool size',
+        #               default=1000,
+        #               levelExpert=LEVEL_ADVANCED,
+        #               help='Maximum number of subtomgram reconstructions to write to temporary storage during training '
+        #                    'of the misalignment model.')
 
-        # -------------------------- INFO functions ------------------------------
-        def _validate(self) -> List[str]:
-            errors = []
+    # --------------------------- INSERT steps functions ----------------------
+    def _initialize(self):
+        self.tsDict = getTsIdsDicts(self.inTsSet.get())
 
-            downsample = (self.downsample.get() or '').split()
-            alignment = (self.alignment.get() or '').split()
-            iterations = len(downsample)
+    def _insertAllSteps(self):
+        self._initialize()
 
-            if iterations < 1:
-                errors.append('At least one downsampling value is required.')
-            if len(alignment) < 1:
-                errors.append('At least one alignment type is required.')
-            if len(alignment) > iterations:
-                errors.append('The number of alignment types cannot exceed the number of iterations.')
+        cInputId = []
+        for tsId in self.tsDict.keys():
+            stepId = self._insertFunctionStep(self.convertInputStep, tsId,
+                                                prerequisites=[],
+                                                needsGPU=False)
+            cInputId.append(stepId)
+        wConfId = self._insertFunctionStep(self.writeConfigStep,
+                                           prerequisites=cInputId,
+                                           needsGPU=False)
+        trainId = self._insertFunctionStep(self.trainingStep,
+                                           prerequisites=wConfId,
+                                           needsGPU=True)
+        self._insertFunctionStep(self.createOutputStep,
+                                 prerequisites=trainId,
+                                 needsGPU=False)
+
+    # -------------------------- STEPS functions ------------------------------
+    def convertInputStep(self):
+        pass
+
+    # -------------------------- INFO functions ------------------------------
+    def _validate(self) -> List[str]:
+        errors = []
+
+        downsample = (self.downsample.get() or '').split()
+        alignment = (self.alignment.get() or '').split()
+        iterations = len(downsample)
+
+        inTsSet = self.inTsSet.get()
+        preprocess = self.preprocess.get()
+
+        if iterations < 1:
+            errors.append('At least one downsampling value is required.')
+        if len(alignment) < 1:
+            errors.append('At least one alignment type is required.')
+        if len(alignment) > iterations:
+            errors.append('The number of alignment types cannot exceed the number of iterations.')
+
+        inTsSet = self.inTsSet.get()
+        if inTsSet is not None:
+            nAligned = sum(1 for ts in inTsSet if ts.hasAlignment())
+            nTotal = inTsSet.getSize()
+            if nAligned == 0 and not self.preprocess.get():
+                errors.append("The tilt-series have no coarse alignment: set 'Preprocess' to Yes.")
+            elif 0 < nAligned < nTotal:
+                errors.append(f'Only {nAligned} of {nTotal} tilt-series have a coarse alignment. '
+                              f'Provide all of them aligned, or none and use Preprocess.')
+
+        pool_size = 1000  # TODO check if you want the user to set it
+        n_partitions = len(self.training_devices.get()) * self.dataloaders_per_trainer.get()
+        partition_size = pool_size // n_partitions
+        if partition_size < (2 * self.batch_size.get()):
+            errors.append('Use fewer training GPUs or data loaders per GPU.')
+
             return errors
+
+    def _warnings(self) -> List[str]:
+        warnings = []
+
+        inTsSet = self.inTsSet.get()
+        if inTsSet is not None and self.preprocess.get():
+            if any(ts.hasAlignment() for ts in inTsSet):
+                warnings.append('Some tilt-series already have a coarse alignment: Preprocess will recompute it.')
+            return warnings
