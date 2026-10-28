@@ -33,9 +33,12 @@ from pyworkflow import BETA
 from typing import List
 from pyworkflow.protocol import PointerParam, EnumParam, IntParam, LEVEL_ADVANCED, FloatParam, StringParam, GPU_LIST, \
     GE, BooleanParam
-from pyworkflow.utils import Message
+from pyworkflow.utils import Message, createAbsLink, makePath
 
 from pyworkflow.object import Boolean
+
+from tomo.utils import getTsIdsDicts
+from os.path import join
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +103,8 @@ class ProtMissalignmentTraining(EMProtocol):
         form.addParam('batch_size', IntParam,
                       label='Batch size',
                       default=32,
-                      help='Amount of patches simultaneously reconstructed in memory.')
+                      help='Amount of patches simultaneously reconstructed in memory.'
+                           'A value of 32 works well for 24 GB cards.')
         form.addParam('patch_size', IntParam,
                       label='Patch size (pixels)',
                       expertLevel=LEVEL_ADVANCED,
@@ -175,8 +179,34 @@ class ProtMissalignmentTraining(EMProtocol):
                                  needsGPU=False)
 
     # -------------------------- STEPS functions ------------------------------
-    def convertInputStep(self):
+    def convertInputStep(self, tsId):
+        ts = self.tsDict[tsId]
+        imodDir = self._makeTsDir(tsId)
+
+
+        ts.writeTltFile(imodDir)
+        ts.writeXfFile(join(imodDir, f'{tsId}.xf')) #TODO excluded views handling
+
+        source = ts.getFirstItem().getFileName()
+        destination = join(imodDir, f'{tsId}.st')
+        createAbsLink(source, destination)
+
+    def writeConfigStep(self):
         pass
+    def trainingStep(self):
+        pass
+    def createOutputStep(self):
+        pass
+
+
+
+    # -------------------------- UTILS functions ------------------------------
+    def _makeTsDir(self, tsId):
+        tsDir = self._getExtraPath('imod', tsId)
+        makePath(tsDir)
+        return tsDir
+
+
 
     # -------------------------- INFO functions ------------------------------
     def _validate(self) -> List[str]:
@@ -188,6 +218,10 @@ class ProtMissalignmentTraining(EMProtocol):
 
         inTsSet = self.inTsSet.get()
         preprocess = self.preprocess.get()
+
+        if inTsSet is not None and inTsSet.interpolated():
+            errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'
+                          'Provide the series with the alignment stored as a transformation.')
 
         if iterations < 1:
             errors.append('At least one downsampling value is required.')
