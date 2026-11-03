@@ -44,6 +44,7 @@ from os.path import join, abspath
 import os
 import csv
 import math
+import yaml
 
 from tomo.tests import tiltStep
 
@@ -191,6 +192,8 @@ class ProtMissalignmentTraining(EMProtocol):
 
     # -------------------------- STEPS functions ------------------------------
     def convertInputStep(self, tsId):
+        logger.info(cyanStr('Compiling imod format files...'))
+
         ts = self.tsDict[tsId]
         imodDir = self._makeImodDir(tsId)
 
@@ -206,6 +209,8 @@ class ProtMissalignmentTraining(EMProtocol):
             createAbsLink(abspath(source), abspath(destination))
 
     def toWarpStep(self):
+        logger.info(cyanStr('Converting in .xml files...'))
+
         dims = []
         tiltAxis_angle = []
         outputDir = self._makeOutputDir()
@@ -222,8 +227,8 @@ class ProtMissalignmentTraining(EMProtocol):
 
         # Call the script etomo_to_warp.py to convert to the .xml format
         args = [
-            f'--input-dir {self.getImodDIr()}',
-            f'--output-dir {outputDir}',
+            f'--input-dir {self.getImodDir()}',
+            f'--output-dir {self.getOutoutDir}',
             f'--tilt-axis-angle {tilt_angle}',
             f'--volume-shape {shape[0]} {shape[1]} {shape[2]}'
         ]
@@ -236,7 +241,24 @@ class ProtMissalignmentTraining(EMProtocol):
         Plugin.runMissalignment(self, f'python "{ETOMO_TO_WARP}"', args, useGpu=False)
 
     def writeConfigStep(self):
-        pass
+        logger.info(cyanStr('Creating configuration file...'))
+        with open(CONFIG_TEMPLATE) as f:
+            config = yaml.safe_load(f)
+
+        config['general']['training_directory'] = self.getOutputDir()
+        # config['general']['iteration_settings'] = self. #TODO
+
+        config['model_training']['learning_rate'] = self.learning_rate.get()
+        config['model_training']['max_epochs_per_iteration'] = self.max_epochs_for_iterations.get()
+
+        config['data_loading']['patch_size'] = self.patch_size.get()
+
+        config['tilt_series_alignment']['batch_size'] = self.batch_size.get()
+        config['tilt_series_alignment']['patch_size'] = self.patch_size.get()
+        config['tilt_series_alignment']['patch_overlap'] = self.patch_overlap.get()
+
+        with open(self._getExtraPath('config.yaml'), 'w') as f:
+            yaml.safe_dump(config, f, sort_keys=False, default_flow_style=None)
 
     def trainingStep(self):
         pass
@@ -250,13 +272,16 @@ class ProtMissalignmentTraining(EMProtocol):
         makePath(tsDir)
         return tsDir
 
-    def getImodDIr(self):
+    def getImodDir(self):
         return self._getExtraPath('imod')
 
     def _makeOutputDir(self):
         outputDir = self._getExtraPath('warp_tiltseries')
         makePath(outputDir)
         return outputDir
+
+    def getOutputDir(self):
+        return self._getExtraPath('warp_tiltseries')
 
     def _getTomoDims(self, ts) -> Tuple[int, int, int]:
         x = int(ts.getDimensions()[0])

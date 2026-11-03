@@ -31,6 +31,7 @@ MISSALIGNMENT = 'missalignment'
 # Paths
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), 'scripts')
 ETOMO_TO_WARP = os.path.join(SCRIPTS_DIR, 'etomo_to_warp.py')
+CONFIG_TEMPLATE = os.path.join(os.path.dirname(__file__), 'templates', 'config_template.yaml')
 
 # Supported versions
 V0_2_0 = '0.2.0'
