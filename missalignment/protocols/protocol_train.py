@@ -27,10 +27,11 @@
 import logging
 from enum import Enum
 
-from missalignment.constants import IN_TS_SET, GLOBAL
+from missalignment import Plugin
+from missalignment.constants import IN_TS_SET, GLOBAL, ETOMO_TO_WARP
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
-from typing import List
+from typing import List, Tuple
 from pyworkflow.protocol import PointerParam, EnumParam, IntParam, LEVEL_ADVANCED, FloatParam, StringParam, GPU_LIST, \
     GE, BooleanParam
 from pyworkflow.utils import Message, createAbsLink, makePath
@@ -42,7 +43,9 @@ from os.path import join, abspath
 
 import os
 import csv
+import math
 
+from tomo.tests import tiltStep
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +70,7 @@ class ProtMissalignmentTraining(EMProtocol):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.tsDict = {}
 
     # --------------------------- DEFINE param functions ----------------------
     def _defineParams(self, form):
@@ -172,8 +176,11 @@ class ProtMissalignmentTraining(EMProtocol):
                                               prerequisites=[],
                                               needsGPU=False)
             cInputId.append(stepId)
+        warpId = self._insertFunctionStep(self.toWarpStep,
+                                          prerequisites=cInputId,
+                                          needsGPU=False)
         wConfId = self._insertFunctionStep(self.writeConfigStep,
-                                           prerequisites=cInputId,
+                                           prerequisites=warpId,
                                            needsGPU=False)
         trainId = self._insertFunctionStep(self.trainingStep,
                                            prerequisites=wConfId,
@@ -185,7 +192,7 @@ class ProtMissalignmentTraining(EMProtocol):
     # -------------------------- STEPS functions ------------------------------
     def convertInputStep(self, tsId):
         ts = self.tsDict[tsId]
-        imodDir = self._makeTsDir(tsId)
+        imodDir = self._makeImodDir(tsId)
 
         present = ts.getTsPresentAcqOrders()
         self.writeRawTltFile(ts, imodDir, present=present)
@@ -198,7 +205,35 @@ class ProtMissalignmentTraining(EMProtocol):
         else:
             createAbsLink(abspath(source), abspath(destination))
 
+    def toWarpStep(self):
+        dims = []
+        tiltAxis_angle = []
+        outputDir = self._makeOutputDir()
 
+        for tsId, ts in self.tsDict.items():
+            dims.append(self._getTomoDims(ts))
+            # Average the tilt axis angle over the whole dataset
+            tiltAxis_angle.append(ts.getAcquisition().getTiltAxisAngle())
+        tilt_angle = sum(tiltAxis_angle) / len(tiltAxis_angle)
+
+        # The tomogram shape should tightly the sample in all three dimensions (X, Y, Z) to avoid training
+        # on empty regions — when samples vary in thickness, use the thickest one as the reference
+        ref_shape = shape = [max(d[i] for d in dims) for i in range(3)]
+
+        # Call the script etomo_to_warp.py to convert to the .xml format
+        args = [
+            f'--input-dir {self.getImodDIr()}',
+            f'--output-dir {outputDir}',
+            f'--tilt-axis-angle {tilt_angle}',
+            f'--volume-shape {shape[0]} {shape[1]} {shape[2]}'
+        ]
+        if self.prepare_stack.get():
+            args.append(f'--output-pixel-size {self.prepare_stack.get()}')
+        else:
+            args.append(f'--output-pixel-size {10}')
+        args = ' '.join(args)
+
+        Plugin.runMissalignment(self, f'python "{ETOMO_TO_WARP}"', args, useGpu=False)
 
     def writeConfigStep(self):
         pass
@@ -210,10 +245,32 @@ class ProtMissalignmentTraining(EMProtocol):
         pass
 
     # -------------------------- UTILS functions ------------------------------
-    def _makeTsDir(self, tsId):
+    def _makeImodDir(self, tsId):
         tsDir = self._getExtraPath('imod', tsId)
         makePath(tsDir)
         return tsDir
+
+    def getImodDIr(self):
+        return self._getExtraPath('imod')
+
+    def _makeOutputDir(self):
+        outputDir = self._getExtraPath('warp_tiltseries')
+        makePath(outputDir)
+        return outputDir
+
+    def _getTomoDims(self, ts) -> Tuple[int, int, int]:
+        x = int(ts.getDimensions()[0])
+        y = int(ts.getDimensions()[1])
+        # The binary swap is exact only near φ∈{0,90}. Near 45°, the detector rectangle rotated into
+        # the tomogram frame needs a box larger than either W×H or H×W. The exact axis-aligned bounding
+        # box of the rotated rectangle covers every imaged pixel at any angle and self-pads near 45°I
+        tiltAxisAngle = ts.getAcquisition().getTiltAxisAngle()
+        c, s = abs(math.cos(tiltAxisAngle)), abs(math.sin(tiltAxisAngle))
+        tomoX = math.ceil(x * c + y * s)
+        tomoY = math.ceil(x * s + y * c)
+        tomoZ = int(max(tomoX, tomoY) / 3)
+        return tomoX, tomoY, tomoZ
+
 
     def writeRawTltFile(self, ts, ts_folder, present):
         """Writes a raw tlt file.

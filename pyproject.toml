@@ -31,7 +31,7 @@ version = {attr = "missalignment.__version__"}
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.package-data]
-"missalignment" = ["protocols.conf", "icon.png", "templates/*"]
+"missalignment" = ["protocols.conf", "icon.png", "templates/*", "scripts/*.py"]
 
 [project.entry-points."pyworkflow.plugin"]
 missalignment = "missalignment"

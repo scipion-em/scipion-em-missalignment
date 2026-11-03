@@ -24,7 +24,13 @@
 # *  e-mail address 'scipion@cnb.csic.es'
 # *
 # **************************************************************************
+import os
+
 MISSALIGNMENT = 'missalignment'
+
+# Paths
+SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), 'scripts')
+ETOMO_TO_WARP = os.path.join(SCRIPTS_DIR, 'etomo_to_warp.py')
 
 # Supported versions
 V0_2_0 = '0.2.0'

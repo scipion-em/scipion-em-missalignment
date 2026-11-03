@@ -10,3 +10,4 @@ include *.txt
 # Include conf file
 include missalignment/protocols.conf
 
+include missalignment/scripts/*.py
