@@ -38,7 +38,11 @@ from pyworkflow.utils import Message, createAbsLink, makePath
 from pyworkflow.object import Boolean
 
 from tomo.utils import getTsIdsDicts
-from os.path import join
+from os.path import join, abspath
+
+import os
+import csv
+
 
 logger = logging.getLogger(__name__)
 
@@ -165,8 +169,8 @@ class ProtMissalignmentTraining(EMProtocol):
         cInputId = []
         for tsId in self.tsDict.keys():
             stepId = self._insertFunctionStep(self.convertInputStep, tsId,
-                                                prerequisites=[],
-                                                needsGPU=False)
+                                              prerequisites=[],
+                                              needsGPU=False)
             cInputId.append(stepId)
         wConfId = self._insertFunctionStep(self.writeConfigStep,
                                            prerequisites=cInputId,
@@ -183,22 +187,27 @@ class ProtMissalignmentTraining(EMProtocol):
         ts = self.tsDict[tsId]
         imodDir = self._makeTsDir(tsId)
 
-
-        ts.writeTltFile(imodDir)
-        ts.writeXfFile(join(imodDir, f'{tsId}.xf')) #TODO excluded views handling
+        present = ts.getTsPresentAcqOrders()
+        self.writeRawTltFile(ts, imodDir, present=present)
+        self.writeXfFile(ts, join(imodDir, f'{tsId}.xf'), present=present)
 
         source = ts.getFirstItem().getFileName()
         destination = join(imodDir, f'{tsId}.st')
-        createAbsLink(source, destination)
+        if ts.hasExcludedViews():
+            ts.reStack(source, destination, present)
+        else:
+            createAbsLink(abspath(source), abspath(destination))
+
+
 
     def writeConfigStep(self):
         pass
+
     def trainingStep(self):
         pass
+
     def createOutputStep(self):
         pass
-
-
 
     # -------------------------- UTILS functions ------------------------------
     def _makeTsDir(self, tsId):
@@ -206,7 +215,60 @@ class ProtMissalignmentTraining(EMProtocol):
         makePath(tsDir)
         return tsDir
 
+    def writeRawTltFile(self, ts, ts_folder, present):
+        """Writes a raw tlt file.
+        :param ts_folder: path of the directory in which the tlt file will be generated.
+        :param present: retrieve ts acquisition order.
+        """
+        xtiltPath = ts_folder + '/%s.rawtlt' % ts.getTsId()
+        with open(xtiltPath, 'w') as f:
+            for ti in ts.iterItems(orderBy=ts.INDEX):
+                if ti.getAcquisitionOrder() not in present:
+                    continue
+                f.write(str(ti.getTiltAngle()) + '\n')
+            # For parallel processing, ensure that the file is completely written and persists on disk
+            f.flush()  # Empty python buffer
+            os.fsync(f.fileno())  # Empty system buffer
 
+    def writeXfFile(self, ts, transformFilePath, present, delimiter='\t', factor=1):
+        """ This method takes a tilt series and the output transformation file
+        path and creates an IMOD-based transform
+        file in the location indicated. """
+
+        tsMatrixTransformList = []
+
+        for ti in ts.iterItems(orderBy=ts.INDEX):
+            if ti.getAcquisitionOrder() not in present:
+                continue
+            if ti.getTransform() is not None:
+                transform = ti.getTransform().getMatrix().flatten()
+                transformIMOD = ['%.7f' % transform[0],
+                                 '%.7f' % transform[1],
+                                 '%.7f' % transform[3],
+                                 '%.7f' % transform[4],
+                                 '%.3f' % (float(transform[2]) / factor),
+                                 '%.3f' % (float(transform[5]) / factor)]
+            else:
+                from pyworkflow.utils import yellowStr
+                logging.info(
+                    yellowStr('WARNING: The Tilt series lacks of alignment information (transformation matrices). '
+                              'The identity transformation will be written in the .xf file'))
+
+                #  This is the identity matrix
+                transformIMOD = ['1.0000000',
+                                 '0.0000000',
+                                 '0.0000000',
+                                 '1.0000000',
+                                 '0.000',
+                                 '0.000']
+            tsMatrixTransformList.append(transformIMOD)
+
+        with open(transformFilePath, 'w') as f:
+            csvW = csv.writer(f, delimiter=delimiter)
+            csvW.writerows(tsMatrixTransformList)
+            # For parallel processing, ensure that the file is completely written and persists on disk
+            f.flush()  # Empty python buffer
+            os.fsync(f.fileno())  # Empty system buffer
 
     # -------------------------- INFO functions ------------------------------
     def _validate(self) -> List[str]:
