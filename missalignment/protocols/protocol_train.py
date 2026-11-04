@@ -295,6 +295,7 @@ class ProtMissalignmentTraining(EMProtocol):
             Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
         except Exception as e:
             logger.error(redStr('Training failed!'))
+            raise
 
     def createOutputStep(self):
         logger.info(cyanStr(f"Creating output...'"))
@@ -432,8 +433,6 @@ class ProtMissalignmentTraining(EMProtocol):
             f'--dataloaders-per-trainer {self.dataloaders_per_trainer.get()}'
         ]
 
-        if self.prepare_stacks.get() != None:
-            cmd.append(f'--prepare-stacks {self.prepare_stacks.get()}')
         if self.preprocess:
             cmd.append('--preprocess')
 
