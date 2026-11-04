@@ -29,6 +29,7 @@ from enum import Enum
 
 from missalignment import Plugin
 from missalignment.constants import IN_TS_SET, GLOBAL, ETOMO_TO_WARP, CONFIG_TEMPLATE
+from missalignment.objects import MissalignmentModel
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
 from typing import List, Tuple
@@ -52,8 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 class Outputobjects(Enum):
-    # model = MissAlignment_model
-    pass
+    model = MissalignmentModel
 
 
 class ProtMissalignmentTraining(EMProtocol):
@@ -127,6 +127,10 @@ class ProtMissalignmentTraining(EMProtocol):
                       default=32,
                       help='Amount of patches simultaneously reconstructed in memory.'
                            'A value of 32 works well for 24 GB cards.')
+        form.addParam('start_at_iteration', IntParam,
+                      label='Start at iteration',
+                      default=0,
+                      help='Continue from a specific iteration in the config.')
         form.addParam('patch_size', IntParam,
                       label='Patch size (pixels)',
                       expertLevel=LEVEL_ADVANCED,
@@ -156,25 +160,31 @@ class ProtMissalignmentTraining(EMProtocol):
         form.addParam('training_devices', StringParam,
                       default='0',
                       label='Training GPUs',
-                      help='GPUs used to train the model, as positions in the list of the available GPUs '
+                      help='GPUs indices used to train the model, as positions in the list of the available GPUs '
                            '(0 = the first one). Each entry runs one training process.')
         form.addParam('reconstruction_devices', StringParam,
                       default='0',
-                      label='Reconstruction GPUs',
-                      help='One entry per reconstruction worker. An index can be repeated to run '
-                           'several workers on the same GPU (0 0 1 1 = two workers on each of the '
-                           'first two GPUs). Can overlap with the training GPUs.')
+                      label='Reconstruction devices',
+                      help='Comma-separated list of GPU device indices for reconstruction workers.'
+                           'Each entry spawns one worker on that device. Devices can be repeated '
+                           'to run multiple workers per GPU (e.g., "0,0,1,1" runs 2 workers each '
+                           'on GPU 0 and GPU 1). Can overlap with training devices if needed.')
         form.addParam('dataloaders_per_trainer', IntParam,
                       default=2, validators=[GE(1)],
                       expertLevel=LEVEL_ADVANCED,
                       label='Data loaders per training GPU',
-                      help='CPU workers per training GPU.')
+                      help='Number of CPU DataLoader workers per training device.')
         # form.addParam('pool_size', IntParam,
         #               label='Pool size',
         #               default=1000,
         #               levelExpert=LEVEL_ADVANCED,
         #               help='Maximum number of subtomgram reconstructions to write to temporary storage during training '
         #                    'of the misalignment model.')
+
+        form.addHidden(GPU_LIST, StringParam,
+                       default='0',
+                       label="Choose GPU IDs you want to use both for training and reconstruction.",
+                       help="")
 
     # --------------------------- INSERT steps functions ----------------------
     def _initialize(self):
@@ -250,8 +260,8 @@ class ProtMissalignmentTraining(EMProtocol):
             f'--tilt-axis-angle {tilt_angle}',
             f'--volume-shape {shape[0]} {shape[1]} {shape[2]}'
         ]
-        if self.prepare_stack.get():
-            args.append(f'--output-pixel-size {self.prepare_stack.get()}')
+        if self.prepare_stacks.get():
+            args.append(f'--output-pixel-size {self.prepare_stacks.get()}')
         else:
             args.append(f'--output-pixel-size {10}')
         args = ' '.join(args)
@@ -281,14 +291,18 @@ class ProtMissalignmentTraining(EMProtocol):
     def trainingStep(self):
         logger.info(cyanStr(f"Training the model...'"))
 
-        # try:
-        #     Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
-        # except Exception as e:
-        #     logger.error(redStr('Training failed!'))
-        Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
+        try:
+            Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
+        except Exception as e:
+            logger.error(redStr('Training failed!'))
 
     def createOutputStep(self):
-        pass
+        logger.info(cyanStr(f"Creating output...'"))
+
+        model = MissalignmentModel(runDirectory=self.getOutputDir(), nIterations=self.num_iterations.get())
+        self._defineOutputs(**{Outputobjects.model.name: model})
+        self._defineSourceRelation(self.inTsSet.get(), model)
+
 
     # -------------------------- UTILS functions ------------------------------
     def _makeImodDir(self, tsId):
@@ -331,7 +345,7 @@ class ProtMissalignmentTraining(EMProtocol):
 
         settings = []
         for i in range(n):
-            entry ={}
+            entry = {}
             entry['downsample'] = int(downsample[i])
             entry['alignment'] = self._parseAlignment(alignment[i])
             settings.append(entry)
@@ -409,12 +423,12 @@ class ProtMissalignmentTraining(EMProtocol):
         return abspath(self._getExtraPath('config.yaml'))
 
     def _generateArguments(self) -> str:
-        training_devices = ','.join([str(el) for el in self.training_devices.get()])
-        reconstruction_devices = ','.join([str(el) for el in self.reconstruction_devices.get()])
+        training_devices = ' '.join([str(el) for el in self.training_devices.get()])
+        reconstruction_devices = ' '.join([str(el) for el in self.reconstruction_devices.get()])
         cmd = [
             f'--config-file {self._getConfigFile()}',
-            f'--training-devices {training_devices}',
-            f'--reconstruction-devices {reconstruction_devices}',
+            f'--training-devices {self.training_devices.get()}',
+            f'--reconstruction-devices {self.reconstruction_devices.get()}',
             f'--dataloaders-per-trainer {self.dataloaders_per_trainer.get()}'
         ]
 
@@ -462,7 +476,7 @@ class ProtMissalignmentTraining(EMProtocol):
         if partition_size < (2 * self.batch_size.get()):
             errors.append('Use fewer training GPUs or data loaders per GPU.')
 
-            return errors
+        return errors
 
     def _warnings(self) -> List[str]:
         warnings = []
