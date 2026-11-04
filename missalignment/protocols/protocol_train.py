@@ -66,7 +66,7 @@ class ProtMissalignmentTraining(EMProtocol):
 
     _label = 'Training'
     _devStatus = BETA
-
+    _program = 'miss-alignment train'
     _possibleOutputs = Outputobjects
 
     def __init__(self, **kwargs):
@@ -281,10 +281,11 @@ class ProtMissalignmentTraining(EMProtocol):
     def trainingStep(self):
         logger.info(cyanStr(f"Training the model...'"))
 
-        try:
-            Plugin.runMissalignment(self, self._generateArguments(), useGpu=True)
-        except Exception as e:
-            logger.error(redStr('Training failed!'))
+        # try:
+        #     Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
+        # except Exception as e:
+        #     logger.error(redStr('Training failed!'))
+        Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
 
     def createOutputStep(self):
         pass
@@ -307,7 +308,7 @@ class ProtMissalignmentTraining(EMProtocol):
         return abspath(self._getExtraPath('warp_tiltseries'))
 
     def _parseAlignment(self, token):
-        token = token.lower()  # G and g, A and a are the same thing
+        token = token.lower()  # 'G' and 'g', 'A' and 'a' are the same thing
         if token == 'g':
             return 'global'
         if token == 'a':
@@ -411,14 +412,14 @@ class ProtMissalignmentTraining(EMProtocol):
         training_devices = ','.join([str(el) for el in self.training_devices.get()])
         reconstruction_devices = ','.join([str(el) for el in self.reconstruction_devices.get()])
         cmd = [
-            'miss-alignment train',
             f'--config-file {self._getConfigFile()}',
-            f'--prepare-stacks {self.prepare_stacks.get()}',
             f'--training-devices {training_devices}',
             f'--reconstruction-devices {reconstruction_devices}',
-            f'--dataloaders-per-trainer {self.dataloader_per_trainer.get()}'
+            f'--dataloaders-per-trainer {self.dataloaders_per_trainer.get()}'
         ]
 
+        if self.prepare_stacks.get() != None:
+            cmd.append(f'--prepare-stacks {self.prepare_stacks.get()}')
         if self.preprocess:
             cmd.append('--preprocess')
 
