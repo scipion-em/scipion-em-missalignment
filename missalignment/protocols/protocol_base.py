@@ -76,8 +76,13 @@ class ProtMissalignmentBase(EMProtocol):
 
         dims = []
         tiltAxis_angle = []
+        ready = [tsId for tsId in self.tsDict if tsId not in self.failedTsIds]
 
-        for tsId, ts in self.tsDict.items():
+        if not ready:
+            raise Exception('No tilt-series could be converted: check the log of the conversion step.')
+
+        for tsId in ready:
+            ts = self.tsDict[tsId]
             dims.append(self._getTomoDims(ts))
             # Average the tilt axis angle over the whole dataset
             tiltAxis_angle.append(ts.getAcquisition().getTiltAxisAngle())

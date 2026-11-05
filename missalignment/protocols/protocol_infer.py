@@ -183,7 +183,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             yaml.safe_dump(config, f, sort_keys=False, default_flow_style=None)
 
     def inferStep(self):
-        logger.info(cyanStr(f"Tilt-series alignment...'"))
+        logger.info(cyanStr(f"Tilt-series alignment..."))
 
         try:
             Plugin.runMissalignment(self, self._program, self._generateArguments(), useGpu=True)
@@ -192,6 +192,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             raise
 
     def createOutputStep(self):
+
         pass
 
     # -------------------------- UTILS functions ------------------------------
@@ -199,7 +200,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         return abspath(self._getExtraPath('inference_config.yaml'))
 
     def _generateArguments(self):
-
         cmd =[
             f'--config-file {self._getConfigFile()}',
             f'--start-at-iteration {self.start_at_iteration.get()}'
@@ -209,6 +209,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             cmd.append('--preprocess')
 
         return ' '.join(cmd)
+
 
 
     # -------------------------- INFO functions ------------------------------
