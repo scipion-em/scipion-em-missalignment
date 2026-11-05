@@ -31,9 +31,10 @@ import yaml
 
 from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE
 from missalignment.objects import MissalignmentModel
+from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
-from pyworkflow.gui import form
+
 from pyworkflow.object import List
 from pyworkflow.protocol import PointerParam, FloatParam, BooleanParam, IntParam, GT, StringParam, LEVEL_ADVANCED, \
     GPU_LIST
