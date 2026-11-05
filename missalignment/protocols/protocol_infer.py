@@ -182,7 +182,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         with open(self._getExtraPath('inference_config.yaml'), 'w') as f:
             yaml.safe_dump(config, f, sort_keys=False, default_flow_style=None)
 
-    def alignStep(self):
+    def inferStep(self):
         logger.info(cyanStr(f"Tilt-series alignment...'"))
 
         try:
