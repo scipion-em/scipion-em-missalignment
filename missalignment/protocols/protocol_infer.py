@@ -29,7 +29,7 @@ from enum import Enum
 from os.path import abspath
 
 import yaml
-
+from missalignment import Plugin
 from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE
 from missalignment.objects import MissalignmentModel
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
