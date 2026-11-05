@@ -1,1 +1,2 @@
+from missalignment.protocols.protocol_infer import ProtMissalignmentInfer
 from missalignment.protocols.protocol_train import ProtMissalignmentTraining
