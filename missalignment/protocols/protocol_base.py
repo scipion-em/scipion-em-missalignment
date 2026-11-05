@@ -27,6 +27,8 @@
 from pwem.protocols import EMProtocol
 from typing import List, Tuple
 
+logger = logging.getLogger(__name__)
+
 class ProtMissalignmentBase(EMProtocol):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
