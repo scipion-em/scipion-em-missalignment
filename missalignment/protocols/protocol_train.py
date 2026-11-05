@@ -25,6 +25,7 @@
 # *
 # **************************************************************************
 import logging
+import traceback
 from enum import Enum
 
 from missalignment import Plugin
@@ -159,13 +160,13 @@ class ProtMissalignmentTraining(EMProtocol):
         form.addSection(label='GPU IDs')
         form.addParam('training_devices', StringParam,
                       default='0',
-                      label='Training GPUs',
-                      help='GPUs indices used to train the model, as positions in the list of the available GPUs '
+                      label='Training GPUs index',
+                      help='Comma-separated list of GPUs indices used to train the model, as positions in the list of the available GPUs '
                            '(0 = the first one). Each entry runs one training process.')
         form.addParam('reconstruction_devices', StringParam,
                       default='0',
-                      label='Reconstruction devices',
-                      help='Comma-separated list of GPU device indices for reconstruction workers.'
+                      label='Reconstruction GPUs index',
+                      help='Comma-separated list of GPUs device indices for reconstruction workers.'
                            'Each entry spawns one worker on that device. Devices can be repeated '
                            'to run multiple workers per GPU (e.g., "0,0,1,1" runs 2 workers each '
                            'on GPU 0 and GPU 1). Can overlap with training devices if needed.')
@@ -178,7 +179,7 @@ class ProtMissalignmentTraining(EMProtocol):
         #               label='Pool size',
         #               default=1000,
         #               levelExpert=LEVEL_ADVANCED,
-        #               help='Maximum number of subtomgram reconstructions to write to temporary storage during training '
+        #               help='Maximum number of subtomogram reconstructions to write to temporary storage during training '
         #                    'of the misalignment model.')
 
         form.addHidden(GPU_LIST, StringParam,
@@ -241,7 +242,6 @@ class ProtMissalignmentTraining(EMProtocol):
 
         dims = []
         tiltAxis_angle = []
-        outputDir = self._makeOutputDir()
 
         for tsId, ts in self.tsDict.items():
             dims.append(self._getTomoDims(ts))
@@ -251,7 +251,7 @@ class ProtMissalignmentTraining(EMProtocol):
 
         # The tomogram shape should tightly the sample in all three dimensions (X, Y, Z) to avoid training
         # on empty regions — when samples vary in thickness, use the thickest one as the reference
-        ref_shape = shape = [max(d[i] for d in dims) for i in range(3)]
+        shape = [max(d[i] for d in dims) for i in range(3)]
 
         # Call the script etomo_to_warp.py to convert to the .xml format
         args = [
@@ -424,8 +424,8 @@ class ProtMissalignmentTraining(EMProtocol):
         return abspath(self._getExtraPath('config.yaml'))
 
     def _generateArguments(self) -> str:
-        training_devices = ' '.join([str(el) for el in self.training_devices.get()])
-        reconstruction_devices = ' '.join([str(el) for el in self.reconstruction_devices.get()])
+        # training_devices = ' '.join([str(el) for el in self.training_devices.get()])
+        # reconstruction_devices = ' '.join([str(el) for el in self.reconstruction_devices.get()])
         cmd = [
             f'--config-file {self._getConfigFile()}',
             f'--training-devices {self.training_devices.get()}',
@@ -449,7 +449,7 @@ class ProtMissalignmentTraining(EMProtocol):
         n_iterations = self.num_iterations.get()
 
         inTsSet = self.inTsSet.get()
-        preprocess = self.preprocess.get()
+        # preprocess = self.preprocess.get()
 
         if inTsSet is not None and inTsSet.interpolated():
             errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'
