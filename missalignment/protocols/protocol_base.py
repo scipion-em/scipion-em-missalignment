@@ -25,7 +25,7 @@
 # *
 # **************************************************************************
 from pwem.protocols import EMProtocol
-
+from typing import List, Tuple
 
 class ProtMissalignmentBase(EMProtocol):
     def __init__(self, **kwargs):
@@ -86,7 +86,7 @@ class ProtMissalignmentBase(EMProtocol):
 
         Plugin.runMissalignment(self, f'python "{ETOMO_TO_WARP}"', args, useGpu=False)
 
-    #---------------------Utils functions-----------------------------
+    # ---------------------Utils functions-----------------------------
 
     def _makeImodDir(self, tsId):
         tsDir = self._getExtraPath('imod', tsId)

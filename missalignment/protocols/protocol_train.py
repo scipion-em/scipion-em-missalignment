@@ -31,6 +31,7 @@ from enum import Enum
 from missalignment import Plugin
 from missalignment.constants import IN_TS_SET, GLOBAL, ETOMO_TO_WARP, CONFIG_TEMPLATE
 from missalignment.objects import MissalignmentModel
+from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
 from typing import List, Tuple

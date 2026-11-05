@@ -35,7 +35,7 @@ from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
 from pyworkflow import BETA
 
-from pyworkflow.object import List
+from typing import List
 from pyworkflow.protocol import PointerParam, FloatParam, BooleanParam, IntParam, GT, StringParam, LEVEL_ADVANCED, \
     GPU_LIST
 from pyworkflow.utils import Message, cyanStr
@@ -66,6 +66,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         self.tsDict = {}
         self.failedTsIds = []
 
+    def _defineParams(self, form):
         form.addSection(label=Message.LABEL_INPUT)
         form.addParam(IN_TS_SET, PointerParam,
                       pointerClass='SetOfTiltSeries',
