@@ -201,8 +201,8 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
     def _generateArguments(self):
 
         cmd =[
-            f'--config_file {self._getConfigFile()}',
-            f'--start_at_iteration {self.start_at_iteration.get()}'
+            f'--config-file {self._getConfigFile()}',
+            f'--start-at-iteration {self.start_at_iteration.get()}'
         ]
 
         if self.preprocess:
