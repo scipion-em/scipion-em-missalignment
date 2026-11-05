@@ -26,6 +26,7 @@
 # **************************************************************************
 import logging
 from enum import Enum
+from os.path import abspath
 
 import yaml
 
@@ -38,7 +39,7 @@ from pyworkflow import BETA
 from typing import List
 from pyworkflow.protocol import PointerParam, FloatParam, BooleanParam, IntParam, GT, StringParam, LEVEL_ADVANCED, \
     GPU_LIST
-from pyworkflow.utils import Message, cyanStr
+from pyworkflow.utils import Message, cyanStr, redStr
 from tomo.objects import SetOfTiltSeries
 from tomo.utils import getTsIdsDicts
 
