@@ -172,7 +172,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             config = yaml.safe_load(f)
 
         config['general']['data_directory'] = self.getOutputDir()
-        config['general']['model_run_directory'] = abspath(model.getRunDirectory())
+        config['general']['model_run_directory'] = abspath(model.getPath())
         config['general']['iteration_settings'] = self._getIteration()
 
         config['tilt_series_alignment']['batch_size'] = self.batch_size.get()
