@@ -264,7 +264,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
             f'--training-devices {self.training_devices.get()}',
             f'--reconstruction-devices {self.reconstruction_devices.get()}',
             f'--dataloaders-per-trainer {self.dataloaders_per_trainer.get()}',
-            f'--start_at_iteration {self.start_at_iteration.get()}'
+            f'--start-at-iteration {self.start_at_iteration.get()}'
         ]
 
         if self.preprocess:
