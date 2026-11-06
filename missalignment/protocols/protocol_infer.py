@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 class Outputobjects(Enum):
-    setOfTiltSeries = SetOfTiltSeries
+   pass
 
 
 class ProtMissalignmentInfer(ProtMissalignmentBase):
@@ -176,7 +176,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         config['general']['iteration_settings'] = self._getIteration()
 
         config['tilt_series_alignment']['batch_size'] = self.batch_size.get()
-        config['tilt_series_alignment']['patch_size'] = model.getPatchSize()
+        config['tilt_series_alignment']['patch_size'] = model.getPatchSize() #same used to train the model
         config['tilt_series_alignment']['patch_overlap'] = self.patch_overlap.get()
 
         with open(self._getExtraPath('inference_config.yaml'), 'w') as f:
