@@ -28,7 +28,7 @@ import logging
 from enum import Enum
 from os.path import join, abspath
 import traceback
-
+import numpy as np
 
 import yaml
 from missalignment import Plugin
@@ -36,13 +36,15 @@ from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE
 from missalignment.objects import MissalignmentModel
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
+from pwem.objects import Transform
 from pyworkflow import BETA
+import xml.etree.ElementTree as ET
 
 from typing import List
 from pyworkflow.protocol import PointerParam, FloatParam, BooleanParam, IntParam, GT, StringParam, LEVEL_ADVANCED, \
     GPU_LIST
 from pyworkflow.utils import Message, cyanStr, redStr
-from tomo.objects import SetOfTiltSeries
+from tomo.objects import SetOfTiltSeries, TiltSeries
 from tomo.utils import getTsIdsDicts
 
 logger = logging.getLogger(__name__)
@@ -266,7 +268,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
     @staticmethod
     def _readGlobalAlignment(xmlPath):
         """(offsetX, offsetY, useTilt, imageDimsAngstrom) from a Warp tilt-series XML."""
-        root = ET.parse(xmlPath).getroot()
+        root = ET.parse(xmlPath).getroot() #
 
         def values(tag):
             return np.array([float(v) for v in root.find(tag).text.split()])
