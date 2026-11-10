@@ -29,7 +29,7 @@ import os
 import traceback
 import math
 
-from os.path import join, abspath
+from os.path import join, abspath, exists
 
 from missalignment import Plugin
 from missalignment.constants import ETOMO_TO_WARP
