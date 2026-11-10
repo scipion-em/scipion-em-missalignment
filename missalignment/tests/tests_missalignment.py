@@ -56,8 +56,12 @@ class TestMissalignment(TestBaseCentralizedLayer):
         TS_1: 41,
         TS_32: 41,
     }
+    anglesCountRestackDict = {
+        TS_1: 37,
+        TS_32: 36,
+    }
     excludedViewsDict = {
-        TS_1: [0, 1, 2, 40, 41],
+        TS_1: [0, 1, 2, 40],
         TS_32: [0, 1, 38, 39, 40]
     }
 
@@ -72,11 +76,11 @@ class TestMissalignment(TestBaseCentralizedLayer):
         cls.sRate = 3.16
 
     @classmethod
-    def _runPreviousProtocols(cls, eVTs: bool = False, coarseAl=False) \
+    def _runPreviousProtocols(cls, eVTs: bool = False, noCoarseAl=False) \
             -> Tuple[SetOfTiltSeries]:
         print(cyanStr('--------------------------------- RUNNING PREVIOUS PROTOCOLS ---------------------------------'))
         importedTs = cls._runImportTs()
-        if not coarseAl:
+        if not NoCoarseAl:
             importedTs = cls._runImportTrMatrix(importedTs)
         if eVTs:
             cls._excludeSetViews(importedTs)
@@ -148,12 +152,13 @@ class TestMissalignment(TestBaseCentralizedLayer):
 
     def _runMissalignmentTraining(self,
                                   inTsSet: SetOfTiltSeries,
-                                  tsSetMsg: str) -> Optional[MissalignmentModel]:
+                                  tsSetMsg: str,
+                                  preprocess=False) -> Optional[MissalignmentModel]:
         print(magenta(f'\n==> Running Missalignment - Training:'
                       f'\n\t- Tilt-series = {tsSetMsg}'))
         protTraining = self.newProtocol(ProtMissalignmentTraining,
                                         inTsSet=inTsSet,
-                                        preprocess = False,
+                                        preprocess=preprocess,
                                         num_iterations=1,
                                         downsample='3',
                                         alignment='A',
@@ -173,7 +178,8 @@ class TestMissalignment(TestBaseCentralizedLayer):
         modelPath = model.getPath()
         self.assertTrue(os.path.exists(modelPath), f'{modelPath} does not exist')  # check if the file exists
 
-    def _runMissalignmentInfer(self, inTsSet: SetOfTiltSeries, model: MissalignmentModel) \
+    def _runMissalignmentInfer(self, inTsSet: SetOfTiltSeries,
+                               model: MissalignmentModel) \
             -> SetOfTiltSeries:
         protInfer = self.newProtocol(ProtMissalignmentInfer,
                                      inTsSet=inTsSet,
@@ -188,18 +194,20 @@ class TestMissalignment(TestBaseCentralizedLayer):
         setOfTs = getattr(protInfer, protInfer._possibleOutputs.tiltSeries.name, None)
         return setOfTs
 
-    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, excludedViewsDict: Optional[dict]) -> None:
+    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False) -> None:
         # Check the Tilt-series sets
         acq = DataSetEmd10491_Odd_Even.acq.value
+        counts = self.anglesCountRestackDict if restacked else self.anglesCountDict
         self.checkTiltSeries(inTsSet,
                              expectedSetSize=self.nTs,
                              expectedSRate=self.sRate,
-                             expectedDimensions=self.expectedTsDims,
+                             expectedDimensions=self.expectedTsDims, #TODO CAMBIA NUMERO DI IMGS
                              hasAlignment=True,
+                             alignment=ALIGN_2D,
                              testSetAcqObj=acq,
                              testAcqObj=acq,
-                             anglesCount=self.anglesCountDict,
-                             excludedViewsDict=self.excludedViewsDict,
+                             anglesCount=counts,
+                             excludedViewsDict=self.excludedViewsDict if eVTs else None,
                              checkHeaderApix=False
                              )
 
@@ -207,7 +215,8 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def _runTestMissalignment(self,
                               inTsSet: SetOfTiltSeries,
                               tsSetMsg: str,
-                              excludedViewsDict=None,
+                              eVTs=False,
+                              restack=False,
                               preprocess=False
                               ) -> None:
         # Run Training
@@ -219,7 +228,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
             inTsSet=inTsSet,
             model=model)
         # Check tilt-series with alignment infos
-        self._checkTiltSeries(setOfTs, excludedViewsDict)
+        self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked)
 
     def testMissalignment(self):
         importedTs = self._runPreviousProtocols()
@@ -227,7 +236,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                    tsSetMsg=self.UNMODIFIED)
 
     def testMissalignment_noCoarseAl(self):
-        importedTs = self._runPreviousProtocols(coarseAl=True)
+        importedTs = self._runPreviousProtocols(noCoarseAl=True)
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg=self.UNMODIFIED,
                                    preprocess=True)
@@ -236,10 +245,12 @@ class TestMissalignment(TestBaseCentralizedLayer):
         importedTs = self._runPreviousProtocols(eVTs=True)
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg=self.EXC_VIEWS,
+                                   eVTs=True
                                    )
 
     def testMissalignment_EV_Restacked_Ts(self):
         importedTs = self._runPreviousProtocols(eVTs=True)
-        tsSetRestacked = self._runExcludeViewsProt(importedTs) # Re-stack the TS
+        tsSetRestacked = self._runExcludeViewsProt(importedTs)  # Re-stack the TS
         self._runTestMissalignment(inTsSet=tsSetRestacked,
-                                   tsSetMsg=self.RE_STACKED)
+                                   tsSetMsg=self.RE_STACKED,
+                                   restacked=True)
