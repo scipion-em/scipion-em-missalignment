@@ -268,10 +268,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
     @staticmethod
     def _readGlobalAlignment(xmlPath):
         """(offsetX, offsetY, useTilt, imageDimsAngstrom) from a Warp tilt-series XML."""
-        root = ET.parse(xmlPath).getroot() #
+        root = ET.parse(xmlPath).getroot() #retrieve most external node of the xml file: <TiltSeries>
 
         def values(tag):
-            return np.array([float(v) for v in root.find(tag).text.split()])
+            return np.array([float(v) for v in root.find(tag).text.split()]) #retrieve values according to the tag
 
         useTilt = np.array([v == 'True' for v in root.find('UseTilt').text.split()])
         imageDims = [float(v) for v in root.get('ImageDimensionsAngstrom').split(',')]
