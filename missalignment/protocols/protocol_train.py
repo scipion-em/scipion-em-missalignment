@@ -317,5 +317,11 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         inTsSet = self.inTsSet.get()
         if inTsSet is not None and self.preprocess.get():
             if any(ts.hasAlignment() for ts in inTsSet):
-                warnings.append('Some tilt-series already have a coarse alignment: Preprocess will recompute it.')
+                warnings.append('Some tilt-series already have coarse alignment: Preprocess will recompute it.')
             return warnings
+
+    def _summary(self):
+        summary = []
+        if self.failedTsIds:
+            summary.append(f'Tilt-series skipped: {", ".join(self.failedTsIds)}')
+        return summary

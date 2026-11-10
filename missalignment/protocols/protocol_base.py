@@ -76,8 +76,8 @@ class ProtMissalignmentBase(EMProtocol):
 
         dims = []
         tiltAxis_angle = []
-        ready = [tsId for tsId in self.tsDict if tsId not in self.failedTsIds]
 
+        ready = self._getReadyTsIds()
         if not ready:
             raise Exception('No tilt-series could be converted: check the log of the conversion step.')
 
@@ -107,7 +107,17 @@ class ProtMissalignmentBase(EMProtocol):
 
         Plugin.runMissalignment(self, f'python "{ETOMO_TO_WARP}"', args, useGpu=False)
 
+        missing = [tsId for tsId in ready if not exists(join(self.getOutputDir(), f'{tsId}.xml'))]
+        self.failedTsIds.extend(missing)
+        if missing:
+            logger.warning(redStr(f'No XML was created for: {missing}. They will not be used.'))
+        if len(missing) == len(ready):
+            raise Exception('No XML was created: check the log of the conversion to .xml.')
+
     # ---------------------Utils functions-----------------------------
+    def _getReadyTsIds(self):
+        """Tilt-series that were converted correctly (files and XML)."""
+        return [tsId for tsId in self.tsDict if tsId not in self.failedTsIds]
 
     def _makeImodDir(self, tsId):
         tsDir = self._getExtraPath('imod', tsId)
