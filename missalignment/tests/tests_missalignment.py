@@ -162,8 +162,8 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                         num_iterations=1,
                                         downsample='3',
                                         alignment='A',
-                                        training_devices='0,1',  # TODO can the gpuids be set
-                                        reconstruction_devices='0,0,1,1',
+                                        #training_devices='0,1',  # TODO can the gpuids be set
+                                        reconstruction_devices='0,0,1,1'
                                         )
         objLabel = (f'\nMissalignment - Training: '
                     f'\n\t- ts = {tsSetMsg}')
