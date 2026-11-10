@@ -26,7 +26,9 @@
 # **************************************************************************
 import logging
 from enum import Enum
-from os.path import abspath
+from os.path import join, abspath
+import traceback
+
 
 import yaml
 from missalignment import Plugin
@@ -93,11 +95,15 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                       help='Pixel size (in Angstroms) for preprocessing tilt stacks. '
                            'If provided, loads raw tilt images, rescales to this pixel size, '
                            'and creates tilt stacks with thumbnails before training.')
-        form.addParam('start_at_iteration', IntParam,
-                      label='Start at iteration',
-                      default=0,
-                      help='Continue from a specific iteration in the config.')
 
+
+        form.addSection(label='Alignment',
+                        help='Each iteration does two things: '
+                             '1. Trains (or fine-tunes) the scoring model at the given downsampling. '
+                             '2. Uses that model to realign every tilt-series. '
+                             'The alignment from one iteration is the starting point for the next, so '
+                             'order the rows from coarse to fine.'
+                        )
         group = form.addGroup('Iterations')
         group.addParam('num_iterations', IntParam,
                        label='Number of iterations',
@@ -124,6 +130,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                       default=32,
                       help='Amount of patches simultaneously reconstructed in memory.'
                            'A value of 32 works well for 24 GB cards.')
+        form.addParam('start_at_iteration', IntParam,
+                      label='Start at iteration',
+                      default=0,
+                      help='Continue from a specific iteration in the config.')
         form.addParam('patch_overlap', FloatParam,
                       label='Patch overlap',
                       expertLevel=LEVEL_ADVANCED,
