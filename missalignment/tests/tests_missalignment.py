@@ -76,11 +76,11 @@ class TestMissalignment(TestBaseCentralizedLayer):
         cls.sRate = 3.16
 
     @classmethod
-    def _runPreviousProtocols(cls, eVTs: bool = False, noCoarseAl: bool = False) \
+    def _runPreviousProtocols(cls, eVTs: bool = False, coarseAl: bool = False) \
             -> Tuple[SetOfTiltSeries]:
         print(cyanStr('--------------------------------- RUNNING PREVIOUS PROTOCOLS ---------------------------------'))
         importedTs = cls._runImportTs()
-        if noCoarseAl:
+        if not coarseAl:
             importedTs = cls._runImportTrMatrix(importedTs)
         if eVTs:
             cls._excludeSetViews(importedTs)
@@ -238,7 +238,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               preprocess=False
                               ) -> None:
         # Run Training
-        model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg)
+        model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess)
         # Check the model
         self._checkModel(model)
         # Run inference
@@ -252,7 +252,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                    tsSetMsg=self.UNMODIFIED)
 
     def testMissalignment_noCoarseAl(self):
-        importedTs = self._runPreviousProtocols(noCoarseAl=True)
+        importedTs = self._runPreviousProtocols(coarseAl=True)
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg=self.UNMODIFIED,
                                    preprocess=True)
