@@ -36,7 +36,8 @@ from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE
 from missalignment.objects import MissalignmentModel
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
-from pwem.objects import Transform, pwobj
+from pwem.objects import Transform
+import pyworkflow.object as pwobj
 from pyworkflow import BETA
 import xml.etree.ElementTree as ET
 
