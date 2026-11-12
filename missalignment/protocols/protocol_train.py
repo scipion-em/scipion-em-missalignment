@@ -156,6 +156,12 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
                       label='Max number of epochs per iteration',
                       default=30,
                       help='Absolute maximum of stopping.')
+        form.addParam('steps_per_epoch', IntParam,
+                      label='Steps per epoch',
+                      default=1000,
+                      validators=[GT(0)],
+                      expertLevel=LEVEL_ADVANCED,
+                      help='Training steps in each epoch. An epoch uses steps x batch size reconstructions.')
 
         form.addSection(label='GPU IDs')
         form.addParam('training_devices', StringParam,
@@ -227,6 +233,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         config['model_training']['max_epochs_per_iteration'] = self.max_epochs_for_iterations.get()
 
         config['data_loading']['patch_size'] = self.patch_size.get()
+        config['data_loading']['steps_per_epoch'] = self.steps_per_epoch.get()
 
         config['tilt_series_alignment']['batch_size'] = self.batch_size.get()
         config['tilt_series_alignment']['patch_size'] = self.patch_size.get()

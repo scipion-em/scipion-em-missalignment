@@ -76,7 +76,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         cls.sRate = 3.16
 
     @classmethod
-    def _runPreviousProtocols(cls, eVTs: bool = False, noCoarseAl:bool=False) \
+    def _runPreviousProtocols(cls, eVTs: bool = False, noCoarseAl: bool = False) \
             -> Tuple[SetOfTiltSeries]:
         print(cyanStr('--------------------------------- RUNNING PREVIOUS PROTOCOLS ---------------------------------'))
         importedTs = cls._runImportTs()
@@ -134,7 +134,6 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                        dosePerFrame=acq.getDosePerFrame(),
                                        tiltAxisAngle=acq.getTiltAxisAngle())
 
-
         cls.launchProtocol(protImportTs)
         tsImported = getattr(protImportTs, 'outputTiltSeries', None)
         return tsImported
@@ -171,11 +170,16 @@ class TestMissalignment(TestBaseCentralizedLayer):
         protTraining = self.newProtocol(ProtMissalignmentTraining,
                                         inTsSet=inTsSet,
                                         preprocess=preprocess,
+                                        prepare_stacks = 30,
                                         num_iterations=1,
-                                        downsample='3',
-                                        alignment='A',
-                                        #training_devices='0,1',  # TODO can the gpuids be set
-                                        reconstruction_devices='0,0,1,1'
+                                        downsample='1',
+                                        alignment='G',
+                                        max_epochs_for_iterations=1,
+                                        training_devices='0',
+                                        reconstruction_devices='0',
+                                        dataloaders_per_trainer=1,
+                                        batch_size=8,
+                                        steps_per_epoch=5
                                         )
         objLabel = (f'\nMissalignment - Training: '
                     f'\n\t- ts = {tsSetMsg}')
@@ -196,9 +200,11 @@ class TestMissalignment(TestBaseCentralizedLayer):
         protInfer = self.newProtocol(ProtMissalignmentInfer,
                                      inTsSet=inTsSet,
                                      model=model,
+                                     prepare_stacks=30,
                                      num_iterations=1,
-                                     downsample='3',
-                                     alignment='A'
+                                     downsample='1',
+                                     alignment='G',
+                                     batch_size=8
                                      )
         objLabel = f'\nMissalignment - Inference: '
         protInfer.setObjLabel(objLabel)
@@ -213,7 +219,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.checkTiltSeries(inTsSet,
                              expectedSetSize=self.nTs,
                              expectedSRate=self.sRate,
-                             expectedDimensions=self.expectedTsDims, #TODO CAMBIA NUMERO DI IMGS
+                             expectedDimensions=self.expectedTsDims,  # TODO CAMBIA NUMERO DI IMGS
                              hasAlignment=True,
                              alignment=ALIGN_2D,
                              testSetAcqObj=acq,
@@ -236,9 +242,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         # Check the model
         self._checkModel(model)
         # Run inference
-        setOfTs = self._runMissalignmentInfer(
-            inTsSet=inTsSet,
-            model=model)
+        setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model)
         # Check tilt-series with alignment infos
         self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked)
 
