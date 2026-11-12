@@ -224,7 +224,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                              )
 
     # TEST
-    def _runTestissalignment(self,
+    def _runTestMissalignment(self,
                               inTsSet: SetOfTiltSeries,
                               tsSetMsg: str,
                               eVTs=False,
