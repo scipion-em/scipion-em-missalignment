@@ -120,8 +120,20 @@ class TestMissalignment(TestBaseCentralizedLayer):
         protImportTs = cls.newProtocol(ProtImportTs,
                                        filesPath=cls.ds.getFile(DataSetEmd10491_Odd_Even.tsDir.value),
                                        filesPattern=DataSetEmd10491_Odd_Even.tsPattern.value,
-                                       exclusionWords='_even.mrcs _odd.mrcs'
-                                       )
+                                       exclusionWords='_even.mrcs _odd.mrcs',
+                                       anglesFrom=0,  # From range
+                                       minAngle=-34,
+                                       maxAngle=46,
+                                       stepAngle=acq.getStep(),
+                                       voltage=acq.getVoltage(),
+                                       magnification=acq.getMagnification(),
+                                       sphericalAberration=acq.getSphericalAberration(),
+                                       amplitudeContrast=acq.getAmplitudeContrast(),
+                                       samplingRate=cls.sRate,
+                                       doseInitial=acq.getDoseInitial(),
+                                       dosePerFrame=acq.getDosePerFrame(),
+                                       tiltAxisAngle=acq.getTiltAxisAngle())
+
 
         cls.launchProtocol(protImportTs)
         tsImported = getattr(protImportTs, 'outputTiltSeries', None)
@@ -212,7 +224,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                              )
 
     # TEST
-    def _runTestMissalignment(self,
+    def _runTestissalignment(self,
                               inTsSet: SetOfTiltSeries,
                               tsSetMsg: str,
                               eVTs=False,
