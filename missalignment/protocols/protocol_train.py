@@ -123,8 +123,8 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
                             'kept anchored), '
                             'MxN = local image warping (e.g. 3x3). '
                             'One value per training iteration, separated by spaces.')
-        form.addParam('batch_size', IntParam,
-                      label='Batch size',
+        form.addParam('batch_size_al', IntParam,
+                      label='Batch size (alignment)',
                       default=32,
                       help='Amount of patches simultaneously reconstructed in memory.'
                            'A value of 32 works well for 24 GB cards.')
@@ -156,12 +156,16 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
                       label='Max number of epochs per iteration',
                       default=30,
                       help='Absolute maximum of stopping.')
+        form.addParam('batch_size_train', IntParam,
+                      label='Batch size (training)',
+                      default=32,
+                      help='Number of patches (3D reconstructions) processed together in each training step.')
         form.addParam('steps_per_epoch', IntParam,
                       label='Steps per epoch',
                       default=1000,
                       validators=[GT(0)],
                       expertLevel=LEVEL_ADVANCED,
-                      help='Training steps in each epoch. An epoch uses steps x batch size reconstructions.')
+                      help='Training steps in each epoch. An epoch uses "steps x batch size" reconstructions.')
 
         form.addSection(label='GPU IDs')
         form.addParam('training_devices', StringParam,
@@ -231,11 +235,12 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
 
         config['model_training']['learning_rate'] = self.learning_rate.get()
         config['model_training']['max_epochs_per_iteration'] = self.max_epochs_for_iterations.get()
+        confid['model_training']['batch_size_train'] = self.batch_size_train.get()
 
         config['data_loading']['patch_size'] = self.patch_size.get()
         config['data_loading']['steps_per_epoch'] = self.steps_per_epoch.get()
 
-        config['tilt_series_alignment']['batch_size'] = self.batch_size.get()
+        config['tilt_series_alignment']['batch_size_al'] = self.batch_size_al.get()
         config['tilt_series_alignment']['patch_size'] = self.patch_size.get()
         config['tilt_series_alignment']['patch_overlap'] = self.patch_overlap.get()
 
@@ -313,7 +318,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         pool_size = 1000  # TODO check if you want the user to set it
         n_partitions = len(self.training_devices.get()) * self.dataloaders_per_trainer.get()
         partition_size = pool_size // n_partitions
-        if partition_size < (2 * self.batch_size.get()):
+        if partition_size < (2 * self.batch_size_al.get()):
             errors.append('Use fewer training GPUs or data loaders per GPU.')
 
         return errors

@@ -178,7 +178,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                         training_devices='0',
                                         reconstruction_devices='0',
                                         dataloaders_per_trainer=1,
-                                        batch_size=8,
+                                        batch_size_al=8,
                                         steps_per_epoch=5
                                         )
         objLabel = (f'\nMissalignment - Training: '
@@ -204,7 +204,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                      num_iterations=1,
                                      downsample='1',
                                      alignment='G',
-                                     batch_size=8
+                                     batch_size_al=8
                                      )
         objLabel = f'\nMissalignment - Inference: '
         protInfer.setObjLabel(objLabel)
@@ -219,7 +219,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.checkTiltSeries(inTsSet,
                              expectedSetSize=self.nTs,
                              expectedSRate=self.sRate,
-                             expectedDimensions=self.expectedTsDims,  # TODO CAMBIA NUMERO DI IMGS
+                             expectedDimensions=self.expectedTsDims,  # TODO the n of imgs change when restacking
                              hasAlignment=True,
                              alignment=ALIGN_2D,
                              testSetAcqObj=acq,
@@ -234,7 +234,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               inTsSet: SetOfTiltSeries,
                               tsSetMsg: str,
                               eVTs=False,
-                              restack=False,
+                              restacked=False,
                               preprocess=False
                               ) -> None:
         # Run Training
