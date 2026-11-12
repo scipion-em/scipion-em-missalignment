@@ -58,11 +58,11 @@ class TestMissalignment(TestBaseCentralizedLayer):
     }
     anglesCountRestackDict = {
         TS_1: 37,
-        TS_32: 36,
+        TS_32: 37,
     }
     excludedViewsDict = {
-        TS_1: [0, 1, 2, 40],
-        TS_32: [0, 1, 38, 39, 40]
+        TS_1: [ 1, 2, 40],
+        TS_32: [ 1, 38, 39]
     }
 
     UNMODIFIED = 'unmodified'
@@ -164,7 +164,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def _runMissalignmentTraining(self,
                                   inTsSet: SetOfTiltSeries,
                                   tsSetMsg: str,
-                                  preprocess=False) -> Optional[MissalignmentModel]:
+                                  preprocess=False, alignment_train: str = 'G') -> Optional[MissalignmentModel]:
         print(magenta(f'\n==> Running Missalignment - Training:'
                       f'\n\t- Tilt-series = {tsSetMsg}'))
         protTraining = self.newProtocol(ProtMissalignmentTraining,
@@ -173,7 +173,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                         prepare_stacks = 30,
                                         num_iterations=1,
                                         downsample='1',
-                                        alignment='G',
+                                        alignment=alignment_train,
                                         max_epochs_for_iterations=1,
                                         training_devices='0',
                                         reconstruction_devices='0',
@@ -195,7 +195,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.assertTrue(os.path.exists(modelPath), f'{modelPath} does not exist')  # check if the file exists
 
     def _runMissalignmentInfer(self, inTsSet: SetOfTiltSeries,
-                               model: MissalignmentModel) \
+                               model: MissalignmentModel, alignment_infer: str = 'G') \
             -> SetOfTiltSeries:
         protInfer = self.newProtocol(ProtMissalignmentInfer,
                                      inTsSet=inTsSet,
@@ -203,7 +203,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                      prepare_stacks=30,
                                      num_iterations=1,
                                      downsample='1',
-                                     alignment='G',
+                                     alignment=alignment_infer,
                                      batch_size_al=8
                                      )
         objLabel = f'\nMissalignment - Inference: '
@@ -235,35 +235,51 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               tsSetMsg: str,
                               eVTs=False,
                               restacked=False,
-                              preprocess=False
+                              preprocess=False,
+                              alignment_train : str = 'G',
+                              alignment_infer : str = 'G'
                               ) -> None:
         # Run Training
-        model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess)
+        model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess,
+                                               alignment_train=alignment_train)
         # Check the model
         self._checkModel(model)
         # Run inference
-        setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model)
+        setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model, alignment_infer=alignment_infer)
         # Check tilt-series with alignment infos
         self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked)
 
-    def testMissalignment(self):
+    # global alignment only
+    def testMissalignment_global(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg=self.UNMODIFIED)
 
+    # local alignment only
+    def testMissalignment_local(self):
+        importedTs = self._runPreviousProtocols()
+        self._runTestMissalignment(inTsSet=importedTs,
+                                   tsSetMsg=self.UNMODIFIED,
+                                   alignment_train = '3x3',
+                                   alignment_infer = '3x3')
+
+
+
+    # no coarse alignment
     def testMissalignment_noCoarseAl(self):
         importedTs = self._runPreviousProtocols(coarseAl=True)
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg=self.UNMODIFIED,
                                    preprocess=True)
 
+    # excluded views
     def testMissalignment_EV_Ts(self):
         importedTs = self._runPreviousProtocols(eVTs=True)
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg=self.EXC_VIEWS,
                                    eVTs=True
                                    )
-
+    # restack
     def testMissalignment_EV_Restacked_Ts(self):
         importedTs = self._runPreviousProtocols(eVTs=True)
         tsSetRestacked = self._runExcludeViewsProt(importedTs)  # Re-stack the TS
