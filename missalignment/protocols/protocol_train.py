@@ -235,7 +235,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
 
         config['model_training']['learning_rate'] = self.learning_rate.get()
         config['model_training']['max_epochs_per_iteration'] = self.max_epochs_for_iterations.get()
-        confid['model_training']['batch_size_train'] = self.batch_size_train.get()
+        config['model_training']['batch_size_train'] = self.batch_size_train.get()
 
         config['data_loading']['patch_size'] = self.patch_size.get()
         config['data_loading']['steps_per_epoch'] = self.steps_per_epoch.get()
