@@ -74,9 +74,9 @@ class TestMissalignment(TestBaseCentralizedLayer):
         setupTestProject(cls)
         cls.ds = DataSet.getDataSet(EMPIAR_10491_ODD_EVEN)
         cls.sRate = 3.16
-        acq = DataSetEmd10491_Odd_Even.acq.value.clone()  # clone: l'oggetto del dataset è condiviso
-        acq.setAngleMin(-34)
-        acq.setAngleMax(46)
+        cls.acq = DataSetEmd10491_Odd_Even.acq.value.clone()
+        cls.acq.setAngleMin(-34)
+        cls.acq.setAngleMax(46)
         cls.tsAcqDict = {TS_1: acq.clone(), TS_32: acq.clone()}
 
     @classmethod
