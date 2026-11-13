@@ -208,8 +208,8 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             logger.error(redStr('Alignment failed!'))
             raise
 
-    def createOutputStep(self, tsId):
-        logger.info(cyanStr('Exporting the alignment to Scipion tilt-series...'))
+    def createOutputStep(self, tsId:str):
+        logger.info(cyanStr('Registering tilt-serires with their Warp XML...'))
         if tsId not in self._getReadyTsIds():
             return
 
@@ -226,7 +226,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet.append(newTs)
 
             outTsSet.write()
-            outTsSet.update(newTs)
+            #outTsSet.update(newTs)
             self._store(outTsSet)
 
         except Exception as e:
@@ -234,26 +234,13 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             logger.error(redStr(f'tsId = {tsId} -> Unable to register the output with exception {e}. Skipping... '))
             logger.error(traceback.format_exc())
 
-    def createOutputSet(self) -> SetOfMissalignmentTiltSeries:
-        logger.info(cyanStr('Creating output set...'))
-        outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
-        if outTsSet:
-            outTsSet.enableAppend()
-        else:
-            inTsPointer = self.inTsSet
-            inTs = inTsPointer.get()
-            outTsSet = SetOfMissalignmentTiltSeries.create(self._getPath(), template="TiltSeries%s")
-            outTsSet.copyInfo(inTs)
-            outTsSet.setStreamState(Set.STREAM_OPEN)
-
-            self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
-            self._defineSourceRelation(inTsPointer, outTsSet)
-
-        return outTsSet
 
     def closeOutputSetStep(self):
         outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
         if outTsSet:
+            for ts in outTsSet:
+                logger.info(
+                    f'{ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()}, views = {ts.getXmlViews()}')
             self._closeOutputSet()
         else:
             raise Exception('No output is generated.')
@@ -264,6 +251,23 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
 
     # -------------------------- UTILS functions ------------------------------
+    def createOutputSet(self) -> SetOfMissalignmentTiltSeries:
+
+        outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
+        if outTsSet:
+            outTsSet.enableAppend()
+        else:
+            logger.info(cyanStr('Creating output set...'))
+            inTsPointer = self.inTsSet
+            inTs = inTsPointer.get()
+            outTsSet = SetOfMissalignmentTiltSeries.create(self._getPath(), template="TiltSeries%s")
+            outTsSet.copyInfo(inTs)
+            outTsSet.setStreamState(Set.STREAM_OPEN)
+
+            self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
+            self._defineSourceRelation(inTsPointer, outTsSet)
+
+        return outTsSet
 
     def _getConfigFile(self):
         return abspath(self._getExtraPath('inference_config.yaml'))

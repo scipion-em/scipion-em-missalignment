@@ -264,13 +264,13 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_global(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg='global only al')
+                                   tsSetMsg='global al. only')
 
     # local alignment only
     def testMissalignment_local(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg='local only al',
+                                   tsSetMsg='local al. only',
                                    alignment_train = '3x3',
                                    alignment_infer = '3x3')
 
@@ -278,7 +278,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_mix(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg='mixed al',
+                                   tsSetMsg='mixed al.',
                                    alignment_train='A G',
                                    num_iterations=2,
                                    downsample='1 1',
@@ -288,7 +288,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_noCoarseAl(self):
         importedTs = self._runPreviousProtocols(withCoarseAl=False)
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg='no coarse al',
+                                   tsSetMsg='no coarse al.',
                                    preprocess=True)
 
     # excluded views
