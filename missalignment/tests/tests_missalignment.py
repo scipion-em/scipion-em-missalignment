@@ -24,6 +24,7 @@
 # *  e-mail address 'scipion@cnb.csic.es'
 # *
 # **************************************************************************
+import copy
 import os
 from typing import Tuple, Union, List, Optional
 
