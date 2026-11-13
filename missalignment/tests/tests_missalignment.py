@@ -126,8 +126,8 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                        filesPattern=DataSetEmd10491_Odd_Even.tsPattern.value,
                                        exclusionWords='_even.mrcs _odd.mrcs',
                                        anglesFrom=0,  # From range
-                                       minAngle=acq.getAngleMin,
-                                       maxAngle=acq.getAngleMax,
+                                       minAngle=acq.getAngleMin(),
+                                       maxAngle=acq.getAngleMax(),
                                        stepAngle=acq.getStep(),
                                        voltage=acq.getVoltage(),
                                        magnification=acq.getMagnification(),
