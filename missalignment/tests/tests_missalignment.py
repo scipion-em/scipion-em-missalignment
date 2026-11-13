@@ -170,7 +170,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def _runMissalignmentTraining(self,
                                   inTsSet: SetOfTiltSeries,
                                   tsSetMsg: str,
-                                  preprocess=False, alignment_train: str = 'G', num_iterations:int=1)\
+                                  preprocess=False, alignment_train: str = 'G', num_iterations:int=1, downsample:str='1')\
             -> Optional[MissalignmentModel]:
         print(magenta(f'\n==> Running Missalignment - Training:'
                       f'\n\t- Tilt-series = {tsSetMsg}'))
@@ -179,7 +179,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                         preprocess=preprocess,
                                         prepare_stacks = 30,
                                         num_iterations=num_iterations,
-                                        downsample='1',
+                                        downsample=downsample,
                                         alignment=alignment_train,
                                         max_epochs_for_iterations=1,
                                         training_devices='0',
@@ -245,11 +245,13 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               preprocess=False,
                               alignment_train : str = 'G',
                               alignment_infer : str = 'G',
-                              num_iterations=1
+                              num_iterations=1,
+                              downsample:str='1'
                               ) -> None:
         # Run Training
         model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess,
-                                               alignment_train=alignment_train, num_iterations=num_iterations)
+                                               alignment_train=alignment_train, num_iterations=num_iterations,
+                                               downsample=downsample)
         # Check the model
         self._checkModel(model)
         # Run inference
@@ -279,6 +281,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                    tsSetMsg='mixed al',
                                    alignment_train='A G',
                                    num_iterations=2,
+                                   downsample='1 1',
                                    alignment_infer='3x3')
 
     # ts already has coarse alignment
@@ -303,8 +306,11 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.tsAcqDict = copy.deepcopy(self.tsAcqDict)
         self.tsAcqDict[TS_1].setAngleMax(44)
         self.tsAcqDict[TS_32].setAngleMin(-32)
-        self.tsAcqDict[TS_1].setDoseInitial(0.)
-        self.tsAcqDict[TS_32].setDoseInitial(0.)
+
+        for ts in tsSetRestacked:
+            inAcq = ts.getAcquisition()
+            self.tsAcqDict[ts.getTsId()].setDoseInitial(inAcq.getDoseInitial())
+            self.tsAcqDict[ts.getTsId()].setAccumDose(inAcq.getAccumDose())
 
         self.tsDimsDict = copy.deepcopy(self.tsDimsDict)
         self.tsDimsDict[TS_1][2] = 38
