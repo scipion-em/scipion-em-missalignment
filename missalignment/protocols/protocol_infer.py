@@ -240,7 +240,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         if outTsSet:
             for ts in outTsSet:
                 logger.info(
-                    f'{ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()}, views = {ts.getXmlViews()}')
+                    f'{ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()})
             self._closeOutputSet()
         else:
             raise Exception('No output is generated.')
