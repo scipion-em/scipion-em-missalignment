@@ -32,7 +32,7 @@ import numpy as np
 
 import yaml
 from missalignment import Plugin
-from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE
+from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE, WARP_XML
 from missalignment.objects import MissalignmentModel
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
@@ -223,7 +223,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
             newTs = TiltSeries(tsId=tsId)
             newTs.copyInfo(ts)
-            newTs._xml = pwobj.String(self._getExtraPath('warp_tiltseries', f'{tsId}.xml'))
+            setattr(newTs, WARP_XML, pwobj.String(self._getExtraPath('warp_tiltseries', f'{tsId}.xml')))
             outTsSet.append(newTs)
             for ti in ts.iterItems(orderBy=ts.INDEX):
                 newTi = ti.clone()

@@ -56,5 +56,5 @@ GLOBAL = 0
 ANCHORING = 1
 SPLINE = 2
 
-
+WARP_XML = '_warpXml'
 

@@ -303,6 +303,8 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.tsAcqDict = copy.deepcopy(self.tsAcqDict)
         self.tsAcqDict[TS_1].setAngleMax(44)
         self.tsAcqDict[TS_32].setAngleMin(-32)
+        self.tsAcqDict[TS_1].setDoseInitial(0.)
+        self.tsAcqDict[TS_32].setDoseInitial(0.)
 
         self.tsDimsDict = copy.deepcopy(self.tsDimsDict)
         self.tsDimsDict[TS_1][2] = 38
