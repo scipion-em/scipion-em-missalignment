@@ -77,7 +77,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         cls.acq = DataSetEmd10491_Odd_Even.acq.value.clone()
         cls.acq.setAngleMin(-34)
         cls.acq.setAngleMax(46)
-        cls.tsAcqDict = {TS_1: acq.clone(), TS_32: acq.clone()}
+        cls.tsAcqDict = {TS_1: cls.acq.clone(), TS_32: cls.acq.clone()}
 
     @classmethod
     def _runPreviousProtocols(cls, eVTs: bool = False, withCoarseAl: bool = True) \
