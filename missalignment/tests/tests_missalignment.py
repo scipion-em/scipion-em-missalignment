@@ -249,7 +249,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               ) -> None:
         # Run Training
         model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess,
-                                               alignment_train=alignment_train)
+                                               alignment_train=alignment_train, num_iterations=num_iterations)
         # Check the model
         self._checkModel(model)
         # Run inference
