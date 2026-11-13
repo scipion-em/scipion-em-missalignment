@@ -224,9 +224,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             newTs.copyInfo(ts)
             newTs.setXmlFile(xmlFile)
             outTsSet.append(newTs)
+            newTs.setDim(ts.getDim())
 
             outTsSet.write()
-            #outTsSet.update(newTs)
+            outTsSet.update(newTs)
             self._store(outTsSet)
 
         except Exception as e:
