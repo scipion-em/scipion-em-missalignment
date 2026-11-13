@@ -33,11 +33,15 @@ from os.path import join, abspath, exists
 
 from missalignment import Plugin
 from missalignment.constants import ETOMO_TO_WARP
+
+from pwem.objects import Volume
 from pwem.protocols import EMProtocol
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Union
 import logging
 
+from pyworkflow.object import Pointer
 from pyworkflow.utils import cyanStr, createAbsLink, redStr, makePath
+from tomo.objects import SetOfTiltSeries, SetOfTomograms, SetOfCTFTomoSeries
 
 logger = logging.getLogger(__name__)
 
