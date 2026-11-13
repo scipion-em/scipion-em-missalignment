@@ -1,6 +1,7 @@
 from pwem import EMObject
 import pyworkflow.object as pwobj
-from tomo.objects import TiltSeries
+from tomo.objects import TiltSeries, SetOfTiltSeriesBase
+from pyworkflow.object import String
 
 
 class MissalignmentModel(EMObject):
@@ -28,6 +29,6 @@ class MissalignmentTiltSeries(TiltSeries):
     def setXmlFile(self, xmlFile):
         self._xmlFile.set(xmlFile)
 
-class SetOfMissalignmentTiltSeries(TiltSeries):
+class SetOfMissalignmentTiltSeries(SetOfTiltSeriesBase):
     ITEM_TYPE = MissalignmentTiltSeries
     EXPOSE_ITEMS = True

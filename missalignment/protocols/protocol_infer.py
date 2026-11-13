@@ -256,7 +256,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         if outTsSet:
             self._closeOutputSet()
         else:
-            raise Exception('No Pytom scored tomograms were generated.')
+            raise Exception('No output is generated.')
 
         if self.failedTsIds:
             self.failedTsIdsStr.set(str(self.failedTsIds))
