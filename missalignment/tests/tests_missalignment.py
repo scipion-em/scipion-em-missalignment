@@ -79,6 +79,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         cls.acq.setAngleMin(-34)
         cls.acq.setAngleMax(46)
         cls.tsAcqDict = {TS_1: cls.acq.clone(), TS_32: cls.acq.clone()}
+        cls.tsDimsDict = {tsId: list(cls.expectedTsDims) for tsId in cls.anglesCountDict}
 
     @classmethod
     def _runPreviousProtocols(cls, eVTs: bool = False, withCoarseAl: bool = True) \
@@ -225,7 +226,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.checkTiltSeries(inTsSet,
                              expectedSetSize=self.nTs,
                              expectedSRate=self.sRate,
-                             expectedDimensions=self.expectedTsDims,  # TODO the n of imgs change when restacking
+                             expectedDimensions=self.tsDimsDict,
                              hasAlignment=True,
                              alignment=ALIGN_2D,
                              testAcqObj=self.tsAcqDict,
@@ -261,13 +262,13 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_global(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg=self.UNMODIFIED)
+                                   tsSetMsg='global only al')
 
     # local alignment only
     def testMissalignment_local(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg=self.UNMODIFIED,
+                                   tsSetMsg='local only al',
                                    alignment_train = '3x3',
                                    alignment_infer = '3x3')
 
@@ -275,7 +276,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_mix(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg=self.UNMODIFIED,
+                                   tsSetMsg='mixed al',
                                    alignment_train='A G',
                                    num_iterations=2,
                                    alignment_infer='3x3')
@@ -284,7 +285,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_noCoarseAl(self):
         importedTs = self._runPreviousProtocols(withCoarseAl=False)
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg=self.UNMODIFIED,
+                                   tsSetMsg='no coarse al',
                                    preprocess=True)
 
     # excluded views
@@ -298,9 +299,14 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def testMissalignment_EV_Restacked_Ts(self):
         importedTs = self._runPreviousProtocols(eVTs=True)
         tsSetRestacked = self._runExcludeViewsProt(importedTs)  # Re-stack the TS
-        testAcq = copy.deepcopy(self.tsAcqDict)
-        testAcq[TS_1].setAngleMax(44)
-        testAcq[TS_32].setAngleMin(-32)
+
+        self.tsAcqDict = copy.deepcopy(self.tsAcqDict)
+        self.tsAcqDict[TS_1].setAngleMax(44)
+        self.tsAcqDict[TS_32].setAngleMin(-32)
+
+        self.tsDimsDict = copy.deepcopy(self.tsDimsDict)
+        self.tsDimsDict[TS_1][2] = 38
+        self.tsDimsDict[TS_32][2] = 38
         self._runTestMissalignment(inTsSet=tsSetRestacked,
                                    tsSetMsg=self.RE_STACKED,
                                    restacked=True)
