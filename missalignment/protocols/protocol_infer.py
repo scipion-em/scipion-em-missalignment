@@ -26,19 +26,20 @@
 # **************************************************************************
 import logging
 from enum import Enum
-from os.path import join, abspath
+from os.path import join, abspath, exists
 import traceback
 import numpy as np
 
 import yaml
 from missalignment import Plugin
 from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE, WARP_XML
-from missalignment.objects import MissalignmentModel
+from missalignment.objects import MissalignmentModel, SetOfMissalignmentTiltSeries, MissalignmentTiltSeries
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
 from pwem.objects import Transform
 import pyworkflow.object as pwobj
 from pyworkflow import BETA
+from pyworkflow.object import Set
 import xml.etree.ElementTree as ET
 
 from typing import List
@@ -52,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 class Outputobjects(Enum):
-   tiltSeries = SetOfTiltSeries
+   tiltSeries = SetOfMissalignmentTiltSeries
 
 
 class ProtMissalignmentInfer(ProtMissalignmentBase):
@@ -170,9 +171,13 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         inferId = self._insertFunctionStep(self.inferStep,
                                            prerequisites=wConfId,
                                            needsGPU=True)
-        self._insertFunctionStep(self.createOutputStep,
+        cOutputId = []
+        for tsId in self.tsDict.keys():
+            outId = self._insertFunctionStep(self.createOutputStep, tsId,
                                  prerequisites=inferId,
                                  needsGPU=False)
+            cOutputId.append(outId)
+        self._insertFunctionStep(self.closeOutputSetStep, prerequisites=cOutputId, needsGPU=False)
 
 
     # -------------------------- STEPS functions ------------------------------
@@ -203,55 +208,63 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             logger.error(redStr('Alignment failed!'))
             raise
 
-    def createOutputStep(self):
+    def createOutputStep(self, tsId):
         logger.info(cyanStr('Exporting the alignment to Scipion tilt-series...'))
-        inTsSet = self.inTsSet.get()
-        outTsSet = SetOfTiltSeries.create(self._getPath(), template='tiltseries', suffix='aligned')
-        outTsSet.copyInfo(inTsSet)
-        outTsSet.setDim(inTsSet.getDim())
+        if tsId not in self._getReadyTsIds():
+            return
 
-        exported, skipped = [], []
-        for tsId in self._getReadyTsIds():
+        try:
             ts = self.tsDict[tsId]
-            try:
-                matrixByOrder = self._getAlignedMatrices(ts)
-            except Exception as e:
-                skipped.append(tsId)
-                logger.error(redStr(f'tsId = {tsId} -> alignment could not be exported: {e}'))
-                logger.error(traceback.format_exc())
-                continue
+            xmlFile = self._getExtraPath('warp_tiltseries', f'{tsId}.xml')
+            if not exists(xmlFile):
+                raise FileNotFoundError(xmlFile)
 
-            newTs = TiltSeries(tsId=tsId)
+            outTsSet = self.createOutputSet()
+            newTs = MissalignmentTiltSeries()
             newTs.copyInfo(ts)
-            setattr(newTs, WARP_XML, pwobj.String(self._getExtraPath('warp_tiltseries', f'{tsId}.xml')))
+            newTs.setXmlFile(xmlFile)
             outTsSet.append(newTs)
-            for ti in ts.iterItems(orderBy=ts.INDEX):
-                newTi = ti.clone()
-                matrix = matrixByOrder.get(ti.getAcquisitionOrder())
-                if matrix is not None:  # excluded views keep what they had
-                    transform = Transform()
-                    transform.setMatrix(matrix)
-                    newTi.setTransform(transform)
-                newTs.append(newTi)
 
-            newTs.setDim(ts.getDim())
-            newTs.setAlignment2D()
-            newTs.write()
+            outTsSet.write()
             outTsSet.update(newTs)
-            exported.append(tsId)
+            self._store(outTsSet)
 
-        if not exported:
-            raise Exception('No alignment could be exported: check the log of this step.')
-        if skipped:
-            logger.warning(redStr(f'Alignment not exported for {len(skipped)} tilt-series: {skipped}'))
+        except Exception as e:
+            self.failedTsIds.append(tsId)
+            logger.error(redStr(f'tsId = {tsId} -> Unable to register the output with exception {e}. Skipping... '))
+            logger.error(traceback.format_exc())
 
-        outTsSet.write()
-        self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
-        self._defineSourceRelation(self.inTsSet, outTsSet)
-        self._defineSourceRelation(self.model, outTsSet)
+    def createOutputSet(self) -> SetOfMissalignmentTiltSeries:
+        logger.info(cyanStr('Creating output set...'))
+        outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
+        if outTsSet:
+            outTsSet.enableAppend()
+        else:
+            inTsPointer = self.inTsSet
+            inTs = inTsPointer.get()
+            outTsSet = SetOfMissalignmentTiltSeries.create(self._getPath(), template="TiltSeries%s")
+            outTsSet.copyInfo(inTs)
+            outTsSet.setStreamState(Set.STREAM_OPEN)
+
+            self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
+            self._defineSourceRelation(inTsPointer, outTsSet)
+
+        return outTsSet
+
+    def closeOutputSetStep(self):
+        outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
+        if outTsSet:
+            self._closeOutputSet()
+        else:
+            raise Exception('No Pytom scored tomograms were generated.')
+
+        if self.failedTsIds:
+            self.failedTsIdsStr.set(str(self.failedTsIds))
+            self._store(self.failedTsIdsStr)
 
 
     # -------------------------- UTILS functions ------------------------------
+
     def _getConfigFile(self):
         return abspath(self._getExtraPath('inference_config.yaml'))
 
@@ -317,6 +330,8 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
         rows = self._offsetsToXf(np.stack([offsetY, offsetX], axis=1), xf[:, :4], pixelSize)
         return {ti.getAcquisitionOrder(): self._xfRowToMatrix(row) for ti, row in zip(views, rows)}
+
+
 
     # -------------------------- INFO functions ------------------------------
     def _validate(self) -> List[str]:

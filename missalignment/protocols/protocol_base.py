@@ -115,6 +115,14 @@ class ProtMissalignmentBase(EMProtocol):
             raise Exception('No XML was created: check the log of the conversion to .xml.')
 
     # ---------------------Utils functions-----------------------------
+    def _getFormAttrib(self, attribName: str, returnPointer: bool = False) -> Optional[Union[SetOfTiltSeries,
+    SetOfTomograms, SetOfCTFTomoSeries, Volume, Pointer]]:
+        inTsPointer = getattr(self, attribName, None)
+        if not inTsPointer:
+            return None
+        else:
+            return inTsPointer if returnPointer else inTsPointer.get()
+
     def _getReadyTsIds(self):
         """Tilt-series that were converted correctly (files and XML)."""
         return [tsId for tsId in self.tsDict if tsId not in self.failedTsIds]
