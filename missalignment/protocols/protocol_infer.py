@@ -222,6 +222,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet = self.createOutputSet()
             newTs = MissalignmentTiltSeries()
             newTs.copyInfo(ts)
+            newTs.setDim(ts.getDim())
             newTs.setXmlFile(xmlFile)
             logger.info(f'{tsId}: input series has {ts.getSize()} images')
             outTsSet.append(newTs)
@@ -230,7 +231,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                 newTs.append(ti.clone(copyEnable=True))
             logger.info(f'{tsId}: output series has {newTs.getSize()} images (in memory)')
 
-            newTs.setDim(ts.getDim())
             outTsSet.write()
             outTsSet.update(newTs)
             outTsSet.write()
