@@ -270,6 +270,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet = SetOfMissalignmentTiltSeries.create(self._getPath(), template="TiltSeries%s")
             outTsSet.copyInfo(inTs)
             outTsSet.setStreamState(Set.STREAM_OPEN)
+            outTsSet.write()
 
             self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
             self._defineSourceRelation(inTsPointer, outTsSet)
