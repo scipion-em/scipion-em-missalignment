@@ -230,7 +230,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet.append(newTs)
 
             # Tilt-images
-            for ti in ts.iterItems(orderBy=TiltImage.INDEX):
+            for ti in ts.iterItems(orderBy=TiltImage.INDEX_FIELD):
                 outTi = TiltImage()
                 outTi.copyInfo(ti)
                 outTi.setEnabled(ti.isEnabled())
