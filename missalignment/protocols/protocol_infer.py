@@ -249,6 +249,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             for ts in outTsSet:
                 logger.info(
                     f'{ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()}')
+                check = SetOfMissalignmentTiltSeries(filename=outTsSet.getFileName())
+                check.load()
+                for ts in check:
+                    logger.info(f'RELOADED {ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()}')
             self._closeOutputSet()
         else:
             raise Exception('No output is generated.')
