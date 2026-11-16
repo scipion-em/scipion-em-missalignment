@@ -217,11 +217,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         try:
             ts = self.tsDict[tsId]
             xmlFile = self._getExtraPath('warp_tiltseries', f'{tsId}.xml')
-            imodFile = self._getAlignedMatrices(ts)
 
             if not exists(xmlFile):
                 raise FileNotFoundError(xmlFile)
-
+            matrixByOrder = self._getAlignedMatrices(ts)
             # Set of Tilt-series
             outTsSet = self.createOutputSet()
             newTs = MissalignmentTiltSeries()
@@ -235,8 +234,19 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                 outTi = TiltImage()
                 outTi.copyInfo(ti)
                 outTi.setEnabled(ti.isEnabled())
+                print(ti.getIndex(), ti.getAcquisitionOrder(), ti.getTiltAngle())
+
+                matrix = matrixByOrder.get(ti.getAcquisitionOrder())
+                if matrix is not None:
+                    transform = Transform()
+                    transform.setMatrix(matrix)
+                    outTi.setTransform(transform)
+                # se matrix è None (vista esclusa, non nell'XML), outTi mantiene la trasformazione copiata da copyInfo
+
                 newTs.append(outTi)
+
             logger.info(f'{tsId}: output series has {newTs.getSize()} images (in memory)')
+            newTs.setAlignment2D()
             newTs.write()
             outTsSet.update(newTs)
             outTsSet.write()
