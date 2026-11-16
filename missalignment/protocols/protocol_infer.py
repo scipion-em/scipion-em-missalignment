@@ -39,7 +39,7 @@ from pwem.protocols import EMProtocol
 from pwem.objects import Transform
 import pyworkflow.object as pwobj
 from pyworkflow import BETA
-from pyworkflow.object import Set
+from pyworkflow.object import Set, String
 import xml.etree.ElementTree as ET
 
 from typing import List
@@ -72,6 +72,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         super().__init__(**kwargs)
         self.tsDict = {}
         self.failedTsIds = []
+        self.failedTsIdsStr = String()
 
     def _defineParams(self, form):
         form.addSection(label=Message.LABEL_INPUT)
