@@ -46,7 +46,7 @@ from typing import List
 from pyworkflow.protocol import PointerParam, FloatParam, BooleanParam, IntParam, GT, StringParam, LEVEL_ADVANCED, \
     GPU_LIST
 from pyworkflow.utils import Message, cyanStr, redStr
-from tomo.objects import SetOfTiltSeries, TiltSeries
+from tomo.objects import SetOfTiltSeries, TiltSeries, TiltImage
 from tomo.utils import getTsIdsDicts
 
 logger = logging.getLogger(__name__)
@@ -216,26 +216,32 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         try:
             ts = self.tsDict[tsId]
             xmlFile = self._getExtraPath('warp_tiltseries', f'{tsId}.xml')
+            imodFile = self._getAlignedMatrices(ts)
+
             if not exists(xmlFile):
                 raise FileNotFoundError(xmlFile)
 
+            # Set of Tilt-series
             outTsSet = self.createOutputSet()
             newTs = MissalignmentTiltSeries()
             newTs.copyInfo(ts)
-            newTs.setDim(ts.getDim())
+            #newTs.setDim(ts.getDim())
             newTs.setXmlFile(xmlFile)
             outTsSet.append(newTs)
 
-            for ti in ts.iterItems():
-                newTs.append(ti.clone(copyEnable=True))
+            # Tilt-images
+            for ti in ts.iterItems(orderBy=TiltImage.INDEX):
+                outTi = TiltImage()
+                outTi.copyInfo(ti)
+                outTi.setEnabled(ti.isEnabled())
+                newTs.append(outTi)
             logger.info(f'{tsId}: output series has {newTs.getSize()} images (in memory)')
             newTs.write()
-
-            outTsSet.write()
             outTsSet.update(newTs)
+            outTsSet.write()
 
             logger.info(f'{tsId}: saved')
-            self._store(outTsSet)
+
 
         except Exception as e:
             self.failedTsIds.append(tsId)
