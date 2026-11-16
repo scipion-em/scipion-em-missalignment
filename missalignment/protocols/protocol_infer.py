@@ -209,7 +209,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             raise
 
     def createOutputStep(self, tsId:str):
-        logger.info(cyanStr('Registering tilt-serires with their Warp XML...'))
+        logger.info(cyanStr('Registering tilt-series with their Warp XML...'))
         if tsId not in self._getReadyTsIds():
             return
 
@@ -223,14 +223,18 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             newTs = MissalignmentTiltSeries()
             newTs.copyInfo(ts)
             newTs.setXmlFile(xmlFile)
+            logger.info(f'{tsId}: input series has {ts.getSize()} images')
             outTsSet.append(newTs)
 
             for ti in ts.iterItems():
                 newTs.append(ti.clone(copyEnable=True))
+            logger.info(f'{tsId}: output series has {newTs.getSize()} images (in memory)')
 
             newTs.setDim(ts.getDim())
             outTsSet.write()
             outTsSet.update(newTs)
+            outTsSet.write()
+            logger.info(f'{tsId}: saved')
             self._store(outTsSet)
 
         except Exception as e:
@@ -256,7 +260,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
     # -------------------------- UTILS functions ------------------------------
     def createOutputSet(self) -> SetOfMissalignmentTiltSeries:
-
         outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
         if outTsSet:
             outTsSet.enableAppend()
@@ -287,7 +290,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
         return ' '.join(cmd)
 
-    # ------------------- alignment export: Warp XML -> Scipion matrices -------------------
+    # ------------------- Global alignment export: Warp XML -> Scipion matrices -------------------
     @staticmethod
     def _readGlobalAlignment(xmlPath):
         """(offsetX, offsetY, useTilt, imageDimsAngstrom) from a Warp tilt-series XML."""
