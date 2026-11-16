@@ -224,16 +224,16 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             newTs.copyInfo(ts)
             newTs.setDim(ts.getDim())
             newTs.setXmlFile(xmlFile)
-            logger.info(f'{tsId}: input series has {ts.getSize()} images')
             outTsSet.append(newTs)
 
             for ti in ts.iterItems():
                 newTs.append(ti.clone(copyEnable=True))
             logger.info(f'{tsId}: output series has {newTs.getSize()} images (in memory)')
+            newTs.write()
 
             outTsSet.write()
             outTsSet.update(newTs)
-            outTsSet.write()
+
             logger.info(f'{tsId}: saved')
             self._store(outTsSet)
 
@@ -249,10 +249,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             for ts in outTsSet:
                 logger.info(
                     f'{ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()}')
-                check = SetOfMissalignmentTiltSeries(filename=outTsSet.getFileName())
-                check.load()
-                for ts in check:
-                    logger.info(f'RELOADED {ts.getTsId()}: {ts.getSize()} images, xml = {ts.getXmlFile()}')
             self._closeOutputSet()
         else:
             raise Exception('No output is generated.')
@@ -274,7 +270,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet = SetOfMissalignmentTiltSeries.create(self._getPath(), template="TiltSeries%s")
             outTsSet.copyInfo(inTs)
             outTsSet.setStreamState(Set.STREAM_OPEN)
-            outTsSet.write()
+
 
             self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
             self._defineSourceRelation(inTsPointer, outTsSet)
