@@ -227,7 +227,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                              expectedSetSize=self.nTs,
                              expectedSRate=self.sRate,
                              expectedDimensions=self.tsDimsDict,
-                             hasAlignment=True,
+                             hasAlignment=not preprocess,
                              alignment=ALIGN_NONE if preprocess else ALIGN_2D,
                              testAcqObj=self.tsAcqDict,
                              anglesCount=counts,
