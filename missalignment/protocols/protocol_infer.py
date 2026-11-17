@@ -220,28 +220,25 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
             if not exists(xmlFile):
                 raise FileNotFoundError(xmlFile)
-            matrixByOrder = self._getAlignedMatrices(ts)
-            # Set of Tilt-series
+            matrixByOrder = self._getAlignedMatrices(ts) # matrices computed by acquisition order
+            # Set of Tilt-series level
             outTsSet = self.createOutputSet()
             newTs = MissalignmentTiltSeries()
             newTs.copyInfo(ts)
-            #newTs.setDim(ts.getDim())
             newTs.setXmlFile(xmlFile)
             outTsSet.append(newTs)
 
-            # Tilt-images
-            for ti in ts.iterItems(orderBy=TiltImage.INDEX_FIELD):
+            # Tilt-images level
+            for ti in ts.iterItems(orderBy=TiltImage.INDEX_FIELD): # images are listed by index
                 outTi = TiltImage()
                 outTi.copyInfo(ti)
                 outTi.setEnabled(ti.isEnabled())
-                print(ti.getIndex(), ti.getAcquisitionOrder(), ti.getTiltAngle())
 
-                matrix = matrixByOrder.get(ti.getAcquisitionOrder())
+                matrix = matrixByOrder.get(ti.getAcquisitionOrder()) # for every ti of the ts, access to its matrix by the acquisition order
                 if matrix is not None:
                     transform = Transform()
                     transform.setMatrix(matrix)
                     outTi.setTransform(transform)
-                # se matrix è None (vista esclusa, non nell'XML), outTi mantiene la trasformazione copiata da copyInfo
 
                 newTs.append(outTi)
 

@@ -82,11 +82,11 @@ class TestMissalignment(TestBaseCentralizedLayer):
         cls.tsDimsDict = {tsId: list(cls.expectedTsDims) for tsId in cls.anglesCountDict}
 
     @classmethod
-    def _runPreviousProtocols(cls, eVTs: bool = False, withCoarseAl: bool = True) \
+    def _runPreviousProtocols(cls, eVTs: bool = False, noCoarseAl: bool = True) \
             -> Tuple[SetOfTiltSeries]:
         print(cyanStr('--------------------------------- RUNNING PREVIOUS PROTOCOLS ---------------------------------'))
         importedTs = cls._runImportTs()
-        if withCoarseAl: # if the ts does not have coarse al, then compute it
+        if noCoarseAl: # if the ts does not have coarse al, then compute it
             importedTs = cls._runImportTrMatrix(importedTs)
         if eVTs:
             cls._excludeSetViews(importedTs)
@@ -220,7 +220,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         setOfTs = getattr(protInfer, protInfer._possibleOutputs.tiltSeries.name, None)
         return setOfTs
 
-    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False) -> None:
+    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False, noCoarseAl:bool=True ) -> None:
         # Check the Tilt-series sets
         counts = self.anglesCountRestackDict if restacked else self.anglesCountDict
         self.checkTiltSeries(inTsSet,
@@ -285,10 +285,10 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                    alignment_infer='3x3')
 
     # ts already has coarse alignment
-    def testMissalignment_noCoarseAl(self):
-        importedTs = self._runPreviousProtocols(withCoarseAl=False)
+    def testMissalignment_withCoarseAl(self):
+        importedTs = self._runPreviousProtocols(noCoarseAl=False)
         self._runTestMissalignment(inTsSet=importedTs,
-                                   tsSetMsg='no coarse al.',
+                                   tsSetMsg='with coarse al.',
                                    preprocess=True)
 
     # excluded views
