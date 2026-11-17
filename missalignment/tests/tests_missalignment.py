@@ -42,7 +42,7 @@ from pyworkflow.utils import cyanStr, magentaStr, magenta
 
 from tomo.protocols import ProtImportTs
 
-from pwem import ALIGN_2D
+from pwem import ALIGN_2D, ALIGN_NONE
 
 from tomo.tests.test_base_centralized_layer import TestBaseCentralizedLayer
 
@@ -220,7 +220,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         setOfTs = getattr(protInfer, protInfer._possibleOutputs.tiltSeries.name, None)
         return setOfTs
 
-    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False, noCoarseAl:bool=True ) -> None:
+    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False, preprocess:bool=False ) -> None:
         # Check the Tilt-series sets
         counts = self.anglesCountRestackDict if restacked else self.anglesCountDict
         self.checkTiltSeries(inTsSet,
@@ -228,7 +228,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                              expectedSRate=self.sRate,
                              expectedDimensions=self.tsDimsDict,
                              hasAlignment=True,
-                             alignment=ALIGN_2D,
+                             alignment=ALIGN_NONE if preprocess else ALIGN_2D,
                              testAcqObj=self.tsAcqDict,
                              anglesCount=counts,
                              excludedViewsDict=self.excludedViewsDict if eVTs else None,
@@ -258,7 +258,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model,preprocess=preprocess,
                                               alignment_infer=alignment_infer)
         # Check tilt-series with alignment infos
-        self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked)
+        self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked, preprocess=preprocess)
 
     # global alignment only
     def testMissalignment_global(self):
