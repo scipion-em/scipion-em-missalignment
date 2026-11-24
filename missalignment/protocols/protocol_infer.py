@@ -385,11 +385,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         inTsSet = self.inTsSet.get()
         model = self.model.get()
 
-        if self.alignment_type.get() == GLOBAL:
-            if 'x' in self.alignment.get().lower():
-                errors.append(
-                    'Local matrices are not allowed when "Global" is selected.'
-                )
+
 
         if model is not None and n_downsample > model.getNIterations():
             errors.append(f'The model has {model.getNIterations()} iterations: '
