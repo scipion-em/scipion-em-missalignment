@@ -114,7 +114,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                       default=GLOBAL_LOCAL,
                       display=EnumParam.DISPLAY_HLIST,
                       help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
-                           '"Global+Local applies a coarse-to-fine alignment, taking into account volumetric '
+                           '"Global+Local" applies a coarse-to-fine alignment, taking into account volumetric '
                            'deformations.')
         outLine = form.addLine('output',
                                condition=f'alignment_type == {GLOBAL}',
@@ -138,21 +138,36 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         #                help='Number of training iterations.')
         group.addParam('downsample', StringParam,
                        label='Downsample per iteration',
-                       default='3 2 1 1 1 1 1 1',
+                       default='3 2 1 1',
                        help='Integer binning factor. '
                             'n = images reduced by a factor n, 1 = full resolution. '
-                            'One value per training iteration, separated by spaces.'
-                            'The number of downsample values must match the number of iterations. ')
+                            'One value per training iteration, separated by spaces.')
         group.addParam('alignment', StringParam,
                        label='Alignment settings',
-                       default='A A G G 3x3 3x3 3x3 3x3',
+                       default='A A G G',
                        help='One type per iteration: '
                             'G = global (one X/Y shift per tilt, refined in a single pass), '
                             'A = anchoring (one X/Y shift per tilt, optimized iteratively: tilts that do not improve are '
                             'kept anchored), '
                             'MxN = local image warping (e.g. 3x3). '
                             'One value per training iteration, separated by spaces.')
-
+        group.addParam('downsample', StringParam,
+                       label='Downsample per iteration',
+                       default='3 2 1 1 1 1 1 1',
+                       condition=f'alignment_type == {GLOBAL_LOCAL}',
+                       help='Integer binning factor. '
+                            'n = images reduced by a factor n, 1 = full resolution. '
+                            'One value per training iteration, separated by spaces.')
+        group.addParam('alignment', StringParam,
+                       label='Alignment settings',
+                       default='A A G G 3x3 3x3 3x3 3x3',
+                       condition=f'alignment_type == {GLOBAL_LOCAL}',
+                       help='One type per iteration: '
+                            'G = global (one X/Y shift per tilt, refined in a single pass), '
+                            'A = anchoring (one X/Y shift per tilt, optimized iteratively: tilts that do not improve are '
+                            'kept anchored), '
+                            'MxN = local image warping (e.g. 3x3). '
+                            'One value per training iteration, separated by spaces.')
         form.addParam('batch_size', IntParam,
                       label='Batch size',
                       default=32,
