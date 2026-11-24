@@ -32,7 +32,7 @@ import numpy as np
 
 import yaml
 from missalignment import Plugin
-from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE, WARP_XML
+from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE, WARP_XML, GLOBAL
 from missalignment.objects import MissalignmentModel, SetOfMissalignmentTiltSeries, MissalignmentTiltSeries
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
@@ -111,7 +111,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         form.addParam('alignment',EnumParam,
                       label='Alignment type',
                       choices = ['Global','Global+Local'],
-                      default='Global',
+                      default=GLOBAL,
                       display=EnumParam.DISPLAY_HLIST,
                       help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
                            '"Global+Local applies a coarse-to-fine alignment, taking into account volumetric '
@@ -123,11 +123,11 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         outLine.addParam('CTF', BooleanParam,
                             label='CTF opt.',
                             default=False,
-                            condition='alignment == Global')
+                            condition=f'alignment == {GLOBAL}')
         outLine.addParam('Tomogram', BooleanParam,
                             label='Tomogram reconstruction opt.',
                             default=False,
-                            condition='alignment == Global'
+                            condition=f'alignment == {GLOBAL}'
                             )
         group = form.addGroup('Iterations')
         # group.addParam('num_iterations', IntParam,
