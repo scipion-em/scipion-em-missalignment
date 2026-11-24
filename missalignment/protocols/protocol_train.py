@@ -102,7 +102,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
                              'The alignment from one iteration is the starting point for the next, so '
                              'order the rows from coarse to fine.'
                         )
-        form.addParam('alignment', EnumParam,
+        form.addParam('alignment_type', EnumParam,
                      label='Alignment type',
                      choices=['Global', 'Global+Local'],
                      default=GLOBAL_LOCAL,
@@ -118,7 +118,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
                             'n = images reduced by a factor n, 1 = full resolution. '
                             'One value per training iteration, separated by spaces.')
         group.addParam('alignment', StringParam,
-                       label='Alignment type',
+                       label='Alignment settings',
                        default='A A G G 3x3 3x3 3x3 3x3',
                        help='One type per iteration: '
                             'G = global (one X/Y shift per tilt, refined in a single pass), '
