@@ -102,12 +102,15 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
                              'The alignment from one iteration is the starting point for the next, so '
                              'order the rows from coarse to fine.'
                         )
+        form.addParam('alignment', EnumParam,
+                     label='Alignment type',
+                     choices=['Global', 'Global+Local'],
+                     default=GLOBAL_LOCAL,
+                     display=EnumParam.DISPLAY_HLIST,
+                     help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
+                          '"Global+Local applies a coarse-to-fine alignment, taking into account volumetric '
+                          'deformations.')
         group = form.addGroup('Iterations')
-        group.addParam('num_iterations', IntParam,
-                       label='Number of iterations',
-                       validators=[GT(0)],
-                       default=8,
-                       help='Number of training iterations.')
         group.addParam('downsample', StringParam,
                        label='Downsample per iteration',
                        default='3 2 1 1 1 1 1 1',
@@ -258,8 +261,8 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
 
     def createOutputStep(self):
         logger.info(cyanStr(f"Creating output...'"))
-
-        model = MissalignmentModel(runDirectory=self.getOutputDir(), nIterations=self.num_iterations.get())
+        num_iterations = len(self.dowsample.get())
+        model = MissalignmentModel(runDirectory=self.getOutputDir(), nIterations=num_iterations)
         self._defineOutputs(**{Outputobjects.model.name: model})
         self._defineSourceRelation(self.inTsSet.get(), model)
 
@@ -301,10 +304,8 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
             errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'
                           'Provide the series with the alignment stored as a transformation.')
 
-        if n_downsample != n_iterations:
-            errors.append('The number of downsample values must match the number of iterations.')
-        if n_alignment != n_iterations:
-            errors.append('The number of alignment types must match the number of iterations.')
+        if n_downsample != n_alignment:
+            errors.append('The number of downsample values must match the number of alignment types.')
 
         if inTsSet is not None:
             nAligned = sum(1 for ts in inTsSet if ts.hasAlignment())

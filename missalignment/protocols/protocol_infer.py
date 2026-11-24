@@ -111,23 +111,22 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         form.addParam('alignment',EnumParam,
                       label='Alignment type',
                       choices = ['Global','Global+Local'],
-                      default=GLOBAL,
+                      default=GLOBAL_LOCAL,
                       display=EnumParam.DISPLAY_HLIST,
                       help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
                            '"Global+Local applies a coarse-to-fine alignment, taking into account volumetric '
                            'deformations.')
         outLine = form.addLine('output',
+                               condition=f'alignment == {GLOBAL}',
                                help='Output data aside from the tilt-series and their alignment infos.'
                                     'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
                                     'by default.')
         outLine.addParam('CTF', BooleanParam,
                             label='CTF opt.',
-                            default=False,
-                            condition=f'alignment == {GLOBAL}')
+                            default=False)
         outLine.addParam('Tomogram', BooleanParam,
                             label='Tomogram reconstruction opt.',
-                            default=False,
-                            condition=f'alignment == {GLOBAL}'
+                            default=False
                             )
         group = form.addGroup('Iterations')
         # group.addParam('num_iterations', IntParam,
@@ -389,12 +388,12 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         alignment = (self.alignment.get() or '').split()
         n_downsample = len(downsample)
         n_alignment = len(alignment)
-        n_iterations = self.num_iterations.get()
+
 
         inTsSet = self.inTsSet.get()
         model = self.model.get()
 
-        if model is not None and self.num_iterations.get() > model.getNIterations():
+        if model is not None and n_downsample > model.getNIterations():
             errors.append(f'The model has {model.getNIterations()} iterations: '
                           f'the inference cannot use more iterations than the run has models for.')
 
@@ -402,10 +401,9 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'
                           'Provide the series with the alignment stored as a transformation.')
 
-        if n_downsample != n_iterations:
-            errors.append('The number of downsample values must match the number of iterations.')
-        if n_alignment != n_iterations:
-            errors.append('The number of alignment types must match the number of iterations.')
+        if n_downsample != n_alignment:
+            errors.append('The number of downsample values must match the number of alignment types.')
+
 
         if inTsSet is not None:
             nAligned = sum(1 for ts in inTsSet if ts.hasAlignment())
