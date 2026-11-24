@@ -113,38 +113,25 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         group = form.addGroup('Iterations')
         group.addParam('downsample', StringParam,
                        label='Downsample per iteration',
-                       default='3 2 1 1',
-                       condition=f'alignment_type == {GLOBAL}',
-                       help='Integer binning factor. '
-                            'n = images reduced by a factor n, 1 = full resolution. '
-                            'One value per training iteration, separated by spaces.')
-        group.addParam('alignment', StringParam,
-                       label='Alignment settings',
-                       default='A A G G',
-                       condition=f'alignment_type == {GLOBAL}',
-                       help='One type per iteration: '
-                            'G = global (one X/Y shift per tilt, refined in a single pass), '
-                            'A = anchoring (one X/Y shift per tilt, optimized iteratively: tilts that do not improve are '
-                            'kept anchored), '
-                            'MxN = local image warping (e.g. 3x3). '
-                            'One value per training iteration, separated by spaces.')
-        group.addParam('downsample', StringParam,
-                       label='Downsample per iteration',
                        default='3 2 1 1 1 1 1 1',
-                       condition = f'alignment_type == {GLOBAL_LOCAL}',
                        help='Integer binning factor. '
-                            'n = images reduced by a factor n, 1 = full resolution. '
-                            'One value per training iteration, separated by spaces.')
+                            'One integer per iteration, separated by spaces. '
+                            'The number of downsample values corresponds to the number of iterations.'
+                            'If the number of downsample values do not correspond to the number of alignment settings '
+                            'types, the last value is repeated to match them.')
         group.addParam('alignment', StringParam,
                        label='Alignment settings',
                        default='A A G G 3x3 3x3 3x3 3x3',
-                       condition=f'alignment_type == {GLOBAL_LOCAL}',
                        help='One type per iteration: '
                             'G = global (one X/Y shift per tilt, refined in a single pass), '
                             'A = anchoring (one X/Y shift per tilt, optimized iteratively: tilts that do not improve are '
                             'kept anchored), '
                             'MxN = local image warping (e.g. 3x3). '
-                            'One value per training iteration, separated by spaces.')
+                            'With Global alignment, MxN entries are ignored. '
+                            'One integer per iteration, separated by spaces.'
+                            'If the number of of alignment settings types do not correspond to the number of downsample '
+                            'values, the last value is repeated to match them.'
+                       )
         form.addParam('batch_size_al', IntParam,
                       label='Batch size (alignment)',
                       default=32,
@@ -328,8 +315,6 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
             errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'
                           'Provide the series with the alignment stored as a transformation.')
 
-        if n_downsample != n_alignment:
-            errors.append('The number of downsample values must match the number of alignment types.')
 
         if inTsSet is not None:
             nAligned = sum(1 for ts in inTsSet if ts.hasAlignment())
@@ -350,12 +335,16 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
 
     def _warnings(self) -> List[str]:
         warnings = []
+        if self.alignment_type.get() == GLOBAL_LOCAL and \
+                not any(isinstance(s['alignment'], list) for s in self._getIteration()):
+            warnings.append('Global + local selected, but the alignment settings '
+                            'contain no local iterations (MxN).')
 
         inTsSet = self.inTsSet.get()
         if inTsSet is not None and self.preprocess.get():
             if any(ts.hasAlignment() for ts in inTsSet):
                 warnings.append('Some tilt-series already have coarse alignment: Preprocess will recompute it.')
-            return warnings
+        return warnings
 
     def _summary(self):
         summary = []

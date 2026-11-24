@@ -46,7 +46,6 @@ from tomo.objects import SetOfTiltSeries, SetOfTomograms, SetOfCTFTomoSeries
 logger = logging.getLogger(__name__)
 
 
-
 class ProtMissalignmentBase(EMProtocol):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -164,11 +163,13 @@ class ProtMissalignmentBase(EMProtocol):
                          f'Use G (global), A (anchoring) or a grid MxN.')
 
     def _getIteration(self):
-        """One dict per iteration: {'downsample': int, 'alignment': 'global' | 'anchoring' | [M, N]}"""
-
-        downsample = (self.downsample.get() or '').split()
-        n = len(downsample)
+        """One dict per iteration: {'downsample': int, 'alignment': 'global' | 'anchoring' | [M, N]}.
+        If the two lists have different lengths, the shorter one is extended
+        by repeating its last value."""
         alignment = (self.alignment.get() or '').split()
+        n = max(len(alignment), len(self.downsample.getListFromValues()))
+        alignment += [alignment[-1]] * (n - len(alignment))
+        downsample = self.downsample.getListFromValues(length=n)
 
         settings = []
         for i in range(n):
@@ -176,7 +177,11 @@ class ProtMissalignmentBase(EMProtocol):
             entry['downsample'] = int(downsample[i])
             entry['alignment'] = self._parseAlignment(alignment[i])
             settings.append(entry)
+
+        if self.alignment_type.get() == GLOBAL:
+            settings = [s for s in settings if not isinstance(s['alignment'], list)]
         return settings
+
 
     def _getTomoDims(self, ts) -> Tuple[int, int, int]:
         x = int(ts.getDimensions()[0])
