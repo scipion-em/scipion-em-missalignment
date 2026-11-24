@@ -114,12 +114,14 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         group.addParam('downsample', StringParam,
                        label='Downsample per iteration',
                        default='3 2 1 1',
+                       condition=f'alignment_type == {GLOBAL}',
                        help='Integer binning factor. '
                             'n = images reduced by a factor n, 1 = full resolution. '
                             'One value per training iteration, separated by spaces.')
         group.addParam('alignment', StringParam,
                        label='Alignment settings',
                        default='A A G G',
+                       condition=f'alignment_type == {GLOBAL}',
                        help='One type per iteration: '
                             'G = global (one X/Y shift per tilt, refined in a single pass), '
                             'A = anchoring (one X/Y shift per tilt, optimized iteratively: tilts that do not improve are '
