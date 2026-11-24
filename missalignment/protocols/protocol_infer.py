@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 class Outputobjects(Enum):
-   tiltSeries = SetOfMissalignmentTiltSeries
+    tiltSeries = SetOfMissalignmentTiltSeries
 
 
 class ProtMissalignmentInfer(ProtMissalignmentBase):
@@ -108,9 +108,9 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                              'The alignment from one iteration is the starting point for the next, so '
                              'order the rows from coarse to fine.'
                         )
-        form.addParam('alignment',EnumParam,
+        form.addParam('alignment_type', EnumParam,
                       label='Alignment type',
-                      choices = ['Global','Global+Local'],
+                      choices=['Global', 'Global+Local'],
                       default=GLOBAL_LOCAL,
                       display=EnumParam.DISPLAY_HLIST,
                       help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
@@ -122,12 +122,14 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                                     'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
                                     'by default.')
         outLine.addParam('CTF', BooleanParam,
-                            label='CTF opt.',
-                            default=False)
+                         label='CTF opt.',
+                         display=params.BooleanParam.DISPLAY_CHECKBOX,
+                         default=False)
         outLine.addParam('Tomogram', BooleanParam,
-                            label='Tomogram reconstruction opt.',
-                            default=False
-                            )
+                         label='Tomogram reconstruction opt.',
+                         display=params.BooleanParam.DISPLAY_CHECKBOX,
+                         default=False
+                         )
         group = form.addGroup('Iterations')
         # group.addParam('num_iterations', IntParam,
         #                label='Number of iterations',
@@ -141,7 +143,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                             'n = images reduced by a factor n, 1 = full resolution. '
                             'One value per training iteration, separated by spaces.'
                             'The number of downsample values must match the number of iterations. ')
-        group.addParam('alignment_type', StringParam,
+        group.addParam('alignment', StringParam,
                        label='Alignment settings',
                        default='A A G G 3x3 3x3 3x3 3x3',
                        help='One type per iteration: '
@@ -196,11 +198,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         cOutputId = []
         for tsId in self.tsDict.keys():
             outId = self._insertFunctionStep(self.createOutputStep, tsId,
-                                 prerequisites=inferId,
-                                 needsGPU=False)
+                                             prerequisites=inferId,
+                                             needsGPU=False)
             cOutputId.append(outId)
         self._insertFunctionStep(self.closeOutputSetStep, prerequisites=cOutputId, needsGPU=False)
-
 
     # -------------------------- STEPS functions ------------------------------
     def writeConfigStep(self):
@@ -216,7 +217,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         config['general']['iteration_settings'] = self._getIteration()
 
         config['tilt_series_alignment']['batch_size'] = self.batch_size.get()
-        config['tilt_series_alignment']['patch_size'] = model.getPatchSize() #same used to train the model
+        config['tilt_series_alignment']['patch_size'] = model.getPatchSize()  # same used to train the model
         config['tilt_series_alignment']['patch_overlap'] = self.patch_overlap.get()
 
         with open(self._getExtraPath('inference_config.yaml'), 'w') as f:
@@ -230,7 +231,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             logger.error(redStr('Alignment failed!'))
             raise
 
-    def createOutputStep(self, tsId:str):
+    def createOutputStep(self, tsId: str):
         logger.info(cyanStr('Registering tilt-series with their Warp XML...'))
         if tsId not in self._getReadyTsIds():
             return
@@ -241,7 +242,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
             if not exists(xmlFile):
                 raise FileNotFoundError(xmlFile)
-            matrixByOrder = self._getAlignedMatrices(ts) # matrices computed by acquisition order
+            matrixByOrder = self._getAlignedMatrices(ts)  # matrices computed by acquisition order
             # Set of Tilt-series level
             outTsSet = self.createOutputSet()
             newTs = MissalignmentTiltSeries()
@@ -250,12 +251,13 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet.append(newTs)
 
             # Tilt-images level
-            for ti in ts.iterItems(orderBy=TiltImage.INDEX_FIELD): # images are listed by index
+            for ti in ts.iterItems(orderBy=TiltImage.INDEX_FIELD):  # images are listed by index
                 outTi = TiltImage()
                 outTi.copyInfo(ti)
                 outTi.setEnabled(ti.isEnabled())
 
-                matrix = matrixByOrder.get(ti.getAcquisitionOrder()) # for every ti of the ts, access to its matrix by the acquisition order
+                matrix = matrixByOrder.get(
+                    ti.getAcquisitionOrder())  # for every ti of the ts, access to its matrix by the acquisition order
                 if matrix is not None:
                     transform = Transform()
                     transform.setMatrix(matrix)
@@ -277,7 +279,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             logger.error(redStr(f'tsId = {tsId} -> Unable to register the output with exception {e}. Skipping... '))
             logger.error(traceback.format_exc())
 
-
     def closeOutputSetStep(self):
         outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
         if outTsSet:
@@ -292,7 +293,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             self.failedTsIdsStr.set(str(self.failedTsIds))
             self._store(self.failedTsIdsStr)
 
-
     # -------------------------- UTILS functions ------------------------------
     def createOutputSet(self) -> SetOfMissalignmentTiltSeries:
         outTsSet = getattr(self, self._possibleOutputs.tiltSeries.name, None)
@@ -306,7 +306,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
             outTsSet.copyInfo(inTs)
             outTsSet.setStreamState(Set.STREAM_OPEN)
 
-
             self._defineOutputs(**{self._possibleOutputs.tiltSeries.name: outTsSet})
             self._defineSourceRelation(inTsPointer, outTsSet)
 
@@ -316,7 +315,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         return abspath(self._getExtraPath('inference_config.yaml'))
 
     def _generateArguments(self):
-        cmd =[
+        cmd = [
             f'--config-file {self._getConfigFile()}',
             f'--start-at-iteration {self.start_at_iteration.get()}'
         ]
@@ -330,10 +329,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
     @staticmethod
     def _readGlobalAlignment(xmlPath):
         """(offsetX, offsetY, useTilt, imageDimsAngstrom) from a Warp tilt-series XML."""
-        root = ET.parse(xmlPath).getroot() #retrieve most external node of the xml file: <TiltSeries>
+        root = ET.parse(xmlPath).getroot()  # retrieve most external node of the xml file: <TiltSeries>
 
         def values(tag):
-            return np.array([float(v) for v in root.find(tag).text.split()]) #retrieve values according to the tag
+            return np.array([float(v) for v in root.find(tag).text.split()])  # retrieve values according to the tag
 
         useTilt = np.array([v == 'True' for v in root.find('UseTilt').text.split()])
         imageDims = [float(v) for v in root.get('ImageDimensionsAngstrom').split(',')]
@@ -378,8 +377,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         rows = self._offsetsToXf(np.stack([offsetY, offsetX], axis=1), xf[:, :4], pixelSize)
         return {ti.getAcquisitionOrder(): self._xfRowToMatrix(row) for ti, row in zip(views, rows)}
 
-
-
     # -------------------------- INFO functions ------------------------------
     def _validate(self) -> List[str]:
         errors = []
@@ -388,7 +385,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         alignment = (self.alignment.get() or '').split()
         n_downsample = len(downsample)
         n_alignment = len(alignment)
-
 
         inTsSet = self.inTsSet.get()
         model = self.model.get()
@@ -403,7 +399,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
 
         if n_downsample != n_alignment:
             errors.append('The number of downsample values must match the number of alignment types.')
-
 
         if inTsSet is not None:
             nAligned = sum(1 for ts in inTsSet if ts.hasAlignment())
