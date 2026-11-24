@@ -377,13 +377,11 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
     def _validate(self) -> List[str]:
         errors = []
 
-        downsample = (self.downsample.get() or '').split()
-        n_downsample = len(downsample)
-
+        num_iterations = len(self._getIteration())
         inTsSet = self.inTsSet.get()
         model = self.model.get()
 
-        if model is not None and n_downsample > model.getNIterations():
+        if model is not None and num_iterations > model.getNIterations():
             errors.append(f'The model has {model.getNIterations()} iterations: '
                           f'the inference cannot use more iterations than the run has models for.')
 
