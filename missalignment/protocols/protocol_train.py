@@ -114,7 +114,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         group.addParam('downsample', StringParam,
                        label='Downsample per iteration',
                        default='3 2 1 1 1 1 1 1',
-                       help='Integer binning factor. '
+                       help='Integer binning factor: n = images reduced by a factor n, 1 = full resolution. '
                             'One integer per iteration, separated by spaces. '
                             'The number of downsample values corresponds to the number of iterations.'
                             'If the number of downsample values do not correspond to the number of alignment settings '
@@ -267,7 +267,7 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
 
     def createOutputStep(self):
         logger.info(cyanStr(f"Creating output...'"))
-        num_iterations = len(self.dowsample.get())
+        num_iterations = len(self._getIteration())
         model = MissalignmentModel(runDirectory=self.getOutputDir(), nIterations=num_iterations)
         self._defineOutputs(**{Outputobjects.model.name: model})
         self._defineSourceRelation(self.inTsSet.get(), model)
@@ -297,14 +297,9 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
     def _validate(self) -> List[str]:
         errors = []
 
-        downsample = (self.downsample.get() or '').split()
-        alignment = (self.alignment.get() or '').split()
-        n_downsample = len(downsample)
-        n_alignment = len(alignment)
 
         inTsSet = self.inTsSet.get()
         # preprocess = self.preprocess.get()
-
 
         if inTsSet is not None and inTsSet.interpolated():
             errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'

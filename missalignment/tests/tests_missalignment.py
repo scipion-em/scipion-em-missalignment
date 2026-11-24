@@ -274,14 +274,14 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                    alignment_train = '3x3',
                                    alignment_infer = '3x3')
 
-
+    # mixed ali-> check match between downsample values and alignemnts values
     def testMissalignment_mix(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='mixed al.',
                                    alignment_train='A G',
                                    num_iterations=2,
-                                   downsample='1 1',
+                                   downsample='1',
                                    alignment_infer='3x3')
 
     # ts already has coarse alignment
@@ -318,3 +318,5 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self._runTestMissalignment(inTsSet=tsSetRestacked,
                                    tsSetMsg=self.RE_STACKED,
                                    restacked=True)
+
+    # add test with tomo rec and ctf

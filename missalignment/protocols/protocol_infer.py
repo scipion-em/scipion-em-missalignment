@@ -121,7 +121,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                       label='Reconstruct the tomograms?',
                       condition=f'alignment_type == {GLOBAL}',
                       help='Tomogram reconstruction is an optional output with the "Global" alignemnt option.')
-        form.addParam('doEstimateCTF',BooleanParam,
+        form.addParam('doEstimateCTF', BooleanParam,
                       default=False,
                       label='Estimate the CTF?',
                       condition=f'alignment_type == {GLOBAL}',
@@ -378,14 +378,10 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
         errors = []
 
         downsample = (self.downsample.get() or '').split()
-        alignment = (self.alignment.get() or '').split()
         n_downsample = len(downsample)
-        n_alignment = len(alignment)
 
         inTsSet = self.inTsSet.get()
         model = self.model.get()
-
-
 
         if model is not None and n_downsample > model.getNIterations():
             errors.append(f'The model has {model.getNIterations()} iterations: '
