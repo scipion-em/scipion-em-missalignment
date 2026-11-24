@@ -44,7 +44,7 @@ import xml.etree.ElementTree as ET
 
 from typing import List
 from pyworkflow.protocol import PointerParam, FloatParam, BooleanParam, IntParam, GT, StringParam, LEVEL_ADVANCED, \
-    GPU_LIST
+    GPU_LIST, Form, EnumParam
 from pyworkflow.utils import Message, cyanStr, redStr
 from tomo.objects import SetOfTiltSeries, TiltSeries, TiltImage
 from tomo.utils import getTsIdsDicts
@@ -101,7 +101,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                            'If provided, loads raw tilt images, rescales to this pixel size, '
                            'and creates tilt stacks with thumbnails before training.')
 
-
         form.addSection(label='Alignment',
                         help='Each iteration does two things: '
                              '1. Trains (or fine-tunes) the scoring model at the given downsampling. '
@@ -109,18 +108,31 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                              'The alignment from one iteration is the starting point for the next, so '
                              'order the rows from coarse to fine.'
                         )
+        form.addParam('alignment',EnumParam,
+                      label='Alignment type',
+                      choices = ['Global','Global+Local'],
+                      default='Global',
+                      display=EnumParam.DISPLAY_HLIST,
+                      help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
+                           '"Global+Local applies a coarse-to-fine alignment, taking into account volumetric '
+                           'deformations.')
+        outLine = form.addLine('output',
+                               help='Output data aside from the tilt-series and their alignment infos.'
+                                    'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
+                                    'by default.')
         group = form.addGroup('Iterations')
-        group.addParam('num_iterations', IntParam,
-                       label='Number of iterations',
-                       validators=[GT(0)],
-                       default=8,
-                       help='Number of training iterations.')
+        # group.addParam('num_iterations', IntParam,
+        #                label='Number of iterations',
+        #                validators=[GT(0)],
+        #                default=8,
+        #                help='Number of training iterations.')
         group.addParam('downsample', StringParam,
                        label='Downsample per iteration',
                        default='3 2 1 1 1 1 1 1',
                        help='Integer binning factor. '
                             'n = images reduced by a factor n, 1 = full resolution. '
-                            'One value per training iteration, separated by spaces.')
+                            'One value per training iteration, separated by spaces.'
+                            'The number of downsample values must match the number of iterations. ')
         group.addParam('alignment', StringParam,
                        label='Alignment type',
                        default='A A G G 3x3 3x3 3x3 3x3',
@@ -130,6 +142,19 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                             'kept anchored), '
                             'MxN = local image warping (e.g. 3x3). '
                             'One value per training iteration, separated by spaces.')
+        lineOutput = group.addLine('Output data',
+                                   help="Choose the output data you want to visualize."
+                                        "If local alignment was set and it is relevant for the tilt-series alignement,"
+                                        "CTF estimation and the tomogram reconstruction output become mandatory." )
+        lineOutput.addParam('CTF', BooleanParam,
+                       label='CTF opt.',
+                       default = False,
+                        condition)
+        lineOutput.addParam('Tomogram',BooleanParam,
+                       label='Tomogram reconstruction opt.',
+                       default=False,
+                       )
+
         form.addParam('batch_size', IntParam,
                       label='Batch size',
                       default=32,
