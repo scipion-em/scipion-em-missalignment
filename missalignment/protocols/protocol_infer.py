@@ -120,6 +120,15 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                                help='Output data aside from the tilt-series and their alignment infos.'
                                     'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
                                     'by default.')
+        outLine.addParam('CTF', BooleanParam,
+                            label='CTF opt.',
+                            default=False,
+                            condition='alignment == Global')
+        outLine.addParam('Tomogram', BooleanParam,
+                            label='Tomogram reconstruction opt.',
+                            default=False,
+                            condition='alignment == Global'
+                            )
         group = form.addGroup('Iterations')
         # group.addParam('num_iterations', IntParam,
         #                label='Number of iterations',
@@ -142,18 +151,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                             'kept anchored), '
                             'MxN = local image warping (e.g. 3x3). '
                             'One value per training iteration, separated by spaces.')
-        lineOutput = group.addLine('Output data',
-                                   help="Choose the output data you want to visualize."
-                                        "If local alignment was set and it is relevant for the tilt-series alignement,"
-                                        "CTF estimation and the tomogram reconstruction output become mandatory." )
-        lineOutput.addParam('CTF', BooleanParam,
-                       label='CTF opt.',
-                       default = False,
-                        condition)
-        lineOutput.addParam('Tomogram',BooleanParam,
-                       label='Tomogram reconstruction opt.',
-                       default=False,
-                       )
 
         form.addParam('batch_size', IntParam,
                       label='Batch size',
