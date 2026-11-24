@@ -120,11 +120,11 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                                help='Output data aside from the tilt-series and their alignment infos.'
                                     'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
                                     'by default.')
-        outLine.addLine('CTF', BooleanParam,
+        outLine.addParam('CTF', BooleanParam,
                             label='CTF opt.',
                             default=False,
                             condition=f'alignment == {GLOBAL}')
-        outLine.addLine('Tomogram', BooleanParam,
+        outLine.addParam('Tomogram', BooleanParam,
                             label='Tomogram reconstruction opt.',
                             default=False,
                             condition=f'alignment == {GLOBAL}'
