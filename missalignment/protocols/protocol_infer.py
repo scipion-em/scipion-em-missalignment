@@ -32,7 +32,7 @@ import numpy as np
 
 import yaml
 from missalignment import Plugin
-from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE, WARP_XML, GLOBAL
+from missalignment.constants import IN_TS_SET, INFER_CONFIG_TEMPLATE, WARP_XML, GLOBAL, GLOBAL_LOCAL
 from missalignment.objects import MissalignmentModel, SetOfMissalignmentTiltSeries, MissalignmentTiltSeries
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol

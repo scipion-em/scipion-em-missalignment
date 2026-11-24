@@ -29,7 +29,7 @@ import traceback
 from enum import Enum
 
 from missalignment import Plugin
-from missalignment.constants import IN_TS_SET, GLOBAL, ETOMO_TO_WARP, CONFIG_TEMPLATE
+from missalignment.constants import IN_TS_SET, GLOBAL, ETOMO_TO_WARP, CONFIG_TEMPLATE, GLOBAL_LOCAL
 from missalignment.objects import MissalignmentModel
 from missalignment.protocols.protocol_base import ProtMissalignmentBase
 from pwem.protocols import EMProtocol
