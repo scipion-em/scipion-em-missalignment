@@ -117,7 +117,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                            '"Global+Local applies a coarse-to-fine alignment, taking into account volumetric '
                            'deformations.')
         outLine = form.addLine('output',
-                               condition=f'alignment == {GLOBAL}',
+                               condition=f'alignment_type == {GLOBAL}',
                                help='Output data aside from the tilt-series and their alignment infos.'
                                     'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
                                     'by default.')
