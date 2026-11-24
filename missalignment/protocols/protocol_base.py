@@ -32,7 +32,7 @@ import math
 from os.path import join, abspath, exists
 
 from missalignment import Plugin
-from missalignment.constants import ETOMO_TO_WARP
+from missalignment.constants import ETOMO_TO_WARP, GLOBAL
 
 from pwem.objects import Volume
 from pwem.protocols import EMProtocol
