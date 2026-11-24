@@ -300,6 +300,12 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         inTsSet = self.inTsSet.get()
         # preprocess = self.preprocess.get()
 
+        if self.alignment_type.get() == GLOBAL:
+            if 'x' in self.alignment.get().lower():
+                errors.append(
+                    'Local matrices are not allowed when "Global" is selected.'
+                )
+
         if inTsSet is not None and inTsSet.interpolated():
             errors.append('The tilt-series are interpolated (the alignment is already applied to the images).'
                           'Provide the series with the alignment stored as a transformation.')
