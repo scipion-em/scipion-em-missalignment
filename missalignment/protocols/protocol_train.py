@@ -295,7 +295,6 @@ class ProtMissalignmentTraining(ProtMissalignmentBase):
         alignment = (self.alignment.get() or '').split()
         n_downsample = len(downsample)
         n_alignment = len(alignment)
-        n_iterations = self.num_iterations.get()
 
         inTsSet = self.inTsSet.get()
         # preprocess = self.preprocess.get()

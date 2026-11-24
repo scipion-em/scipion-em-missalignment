@@ -165,8 +165,9 @@ class ProtMissalignmentBase(EMProtocol):
 
     def _getIteration(self):
         """One dict per iteration: {'downsample': int, 'alignment': 'global' | 'anchoring' | [M, N]}"""
-        n = self.num_iterations.get()
+
         downsample = (self.downsample.get() or '').split()
+        n = len(downsample)
         alignment = (self.alignment.get() or '').split()
 
         settings = []
