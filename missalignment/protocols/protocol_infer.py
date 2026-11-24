@@ -120,11 +120,11 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                                help='Output data aside from the tilt-series and their alignment infos.'
                                     'If the "Global+Local" option was set, CTF and Tomogram reconstruction are provided'
                                     'by default.')
-        outLine.addParam('CTF', BooleanParam,
+        outLine.addLine('CTF', BooleanParam,
                             label='CTF opt.',
                             default=False,
                             condition=f'alignment == {GLOBAL}')
-        outLine.addParam('Tomogram', BooleanParam,
+        outLine.addLine('Tomogram', BooleanParam,
                             label='Tomogram reconstruction opt.',
                             default=False,
                             condition=f'alignment == {GLOBAL}'
@@ -142,8 +142,8 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                             'n = images reduced by a factor n, 1 = full resolution. '
                             'One value per training iteration, separated by spaces.'
                             'The number of downsample values must match the number of iterations. ')
-        group.addParam('alignment', StringParam,
-                       label='Alignment type',
+        group.addParam('alignment_type', StringParam,
+                       label='Alignment settings',
                        default='A A G G 3x3 3x3 3x3 3x3',
                        help='One type per iteration: '
                             'G = global (one X/Y shift per tilt, refined in a single pass), '
