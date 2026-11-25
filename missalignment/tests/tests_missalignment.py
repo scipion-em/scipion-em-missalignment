@@ -186,6 +186,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                         max_epochs_for_iterations=1,
                                         training_devices='0',
                                         reconstruction_devices='0',
+
                                         batch_size_al=8,
                                         steps_per_epoch=5
                                         )
@@ -203,12 +204,14 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self.assertTrue(os.path.exists(modelPath), f'{modelPath} does not exist')  # check if the file exists
 
     def _runMissalignmentInfer(self, inTsSet: SetOfTiltSeries,
-                               model: MissalignmentModel, alignment_infer: str = 'G',
-                               alignment_type_infer=GLOBAL_LOCAL, downsample_infer:str='1') \
+                               model: MissalignmentModel,alignment_infer: str = 'G',
+                               alignment_type_infer=GLOBAL_LOCAL, downsample_infer:str='1',preprocess:bool=False) \
             -> SetOfTiltSeries:
+
         protInfer = self.newProtocol(ProtMissalignmentInfer,
                                      inTsSet=inTsSet,
                                      model=model,
+                                     preprocess=preprocess,
                                      prepare_stacks=30,
                                      alignment_type=alignment_type_infer,
                                      downsample=downsample_infer,

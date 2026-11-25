@@ -101,21 +101,16 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                            'If provided, loads raw tilt images, rescales to this pixel size, '
                            'and creates tilt stacks with thumbnails before training.')
 
-        form.addSection(label='Alignment',
-                        help='Each iteration does two things: '
-                             '1. Trains (or fine-tunes) the scoring model at the given downsampling. '
-                             '2. Uses that model to realign every tilt-series. '
-                             'The alignment from one iteration is the starting point for the next, so '
-                             'order the rows from coarse to fine.'
-                        )
+        form.addSection(label='Alignment')
         form.addParam('alignment_type', EnumParam,
                       label='Alignment type',
                       choices=['Global', 'Global+Local'],
                       default=GLOBAL_LOCAL,
                       display=EnumParam.DISPLAY_HLIST,
                       help='The "Global" option corrects global tracking errors, applying one X/Y shift per tilt.'
-                           '"Global+Local" applies a coarse-to-fine alignment, taking into account volumetric '
-                           'deformations.')
+                          '"Global+Local" applies a coarse-to-fine alignment, taking into account volumetric '
+                          'deformations. The alignment from one iteration is the starting point for the next, so '
+                          'order the rows from coarse to fine.')
         form.addParam('makeTomo', BooleanParam,
                       default=False,
                       label='Reconstruct the tomograms?',
@@ -133,7 +128,6 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                        default='3 2 1 1 1 1 1 1',
                        help='Integer binning factor: n = images reduced by a factor n, 1 = full resolution. '
                             'One integer per iteration, separated by spaces. '
-                            'The number of downsample values corresponds to the number of iterations.'
                             'If the number of downsample values do not correspond to the number of alignment settings '
                             'types, the last value is repeated to match them.')
         group.addParam('alignment', StringParam,
@@ -145,7 +139,7 @@ class ProtMissalignmentInfer(ProtMissalignmentBase):
                             'kept anchored), '
                             'MxN = local image warping (e.g. 3x3). '
                             'With Global alignment, MxN entries are ignored. '
-                            'One integer per iteration, separated by spaces. '
+                            'One integer per iteration, separated by spaces.'
                             'If the number of of alignment settings types do not correspond to the number of downsample '
                             'values, the last value is repeated to match them.'
                        )
