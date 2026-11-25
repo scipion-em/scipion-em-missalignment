@@ -282,10 +282,10 @@ class TestMissalignment(TestBaseCentralizedLayer):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='local al. only',
-                                   alignment = '3x3, 3x3',
+                                   alignment = '3x3 3x3',
                                    alignment_infer = '3x3')
 
-    # mixed ali-> it also check match between downsample values and alignmnts values (local ali in this case)
+    # mixed ali-> it also check match between downsample values and alignments values (local ali in this case)
     def testMissalignment_mix(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
