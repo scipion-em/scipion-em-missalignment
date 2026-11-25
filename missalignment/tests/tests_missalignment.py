@@ -171,7 +171,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def _runMissalignmentTraining(self,
                                   inTsSet: SetOfTiltSeries,
                                   tsSetMsg: str,
-                                  preprocess=False, alignment_train: str = 'G', downsample: str = '1',
+                                  preprocess=False, alignment: str = 'G', downsample: str = '1',
                                   alignment_type=GLOBAL_LOCAL) \
             -> Optional[MissalignmentModel]:
         print(magenta(f'\n==> Running Missalignment - Training:'
@@ -182,7 +182,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                         prepare_stacks=30,
                                         alignment_type=alignment_type,
                                         downsample=downsample,
-                                        alignment=alignment_train,
+                                        alignment=alignment,
                                         max_epochs_for_iterations=1,
                                         training_devices='0',
                                         reconstruction_devices='0',
@@ -249,21 +249,21 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               preprocess=False,
                               alignment_type=GLOBAL_LOCAL,
                               alignment_type_infer=GLOBAL_LOCAL,
-                              alignment_train: str = 'G 3x3',
+                              alignment: str = 'G 3x3',
                               alignment_infer: str = 'G 3x3',
                               downsample: str = '1 1',
                               downsample_infer: int = '1 1'
                               ) -> None:
         # Run Training
         model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess,
-                                               alignment_train=alignment_train,
+                                               alignment=alignment,
                                                downsample=downsample, alignment_type=alignment_type)
         # Check the model
         self._checkModel(model)
         # Run inference
         setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model, preprocess=preprocess,
                                               alignment_infer=alignment_infer, downsample_infer=downsample_infer,
-                                              alignment_type=alignment_type_infer)
+                                              alignment_type_infer=alignment_type_infer)
         # Check tilt-series with alignment infos
         self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked, preprocess=preprocess)
 
@@ -273,7 +273,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='global al. only',
                                    alignment_type=GLOBAL,
-                                   alignment_train='G',
+                                   alignment='G',
                                    alignment_type_infer=GLOBAL,
                                    alignment_infer='G')
 
@@ -282,7 +282,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='local al. only',
-                                   alignment_train = '3x3, 3x3',
+                                   alignment = '3x3, 3x3',
                                    alignment_infer = '3x3')
 
     # mixed ali-> it also check match between downsample values and alignmnts values (local ali in this case)
@@ -291,7 +291,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='mixed al.',
                                    alignment_type=GLOBAL,
-                                   alignment_train='A G 3x5',
+                                   alignment='A G 3x5',
                                    downsample='3 1 1',
                                     )
 
