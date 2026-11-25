@@ -30,6 +30,7 @@ from typing import Tuple, Union, List, Optional
 
 from imod.constants import OUTPUT_TILTSERIES_NAME
 from imod.protocols import ProtImodExcludeViews, ProtImodImportTransformationMatrix
+from missalignment.constants import GLOBAL_LOCAL, GLOBAL
 from missalignment.objects import MissalignmentModel
 from missalignment.protocols import ProtMissalignmentInfer, ProtMissalignmentTraining
 from tomo.objects import SetOfTiltSeries, SetOfCTFTomoSeries, CTFTomoSeries, TiltSeries
@@ -62,8 +63,8 @@ class TestMissalignment(TestBaseCentralizedLayer):
         TS_32: 38,
     }
     excludedViewsDict = {
-        TS_1: [ 1, 2, 40],
-        TS_32: [ 0, 38, 39]
+        TS_1: [1, 2, 40],
+        TS_32: [0, 38, 39]
     }
 
     UNMODIFIED = 'unmodified'
@@ -86,7 +87,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
             -> Tuple[SetOfTiltSeries]:
         print(cyanStr('--------------------------------- RUNNING PREVIOUS PROTOCOLS ---------------------------------'))
         importedTs = cls._runImportTs()
-        if noCoarseAl: # if the ts does not have coarse al, then compute it
+        if noCoarseAl:  # if the ts does not have coarse al, then compute it
             importedTs = cls._runImportTrMatrix(importedTs)
         if eVTs:
             cls._excludeSetViews(importedTs)
@@ -170,15 +171,14 @@ class TestMissalignment(TestBaseCentralizedLayer):
     def _runMissalignmentTraining(self,
                                   inTsSet: SetOfTiltSeries,
                                   tsSetMsg: str,
-                                  preprocess=False, alignment_train: str = 'G', num_iterations:int=1, downsample:str='1')\
+                                  preprocess=False, alignment_train: str = 'G', downsample: str = '1') \
             -> Optional[MissalignmentModel]:
         print(magenta(f'\n==> Running Missalignment - Training:'
                       f'\n\t- Tilt-series = {tsSetMsg}'))
         protTraining = self.newProtocol(ProtMissalignmentTraining,
                                         inTsSet=inTsSet,
                                         preprocess=preprocess,
-                                        prepare_stacks = 30,
-                                        num_iterations=num_iterations,
+                                        prepare_stacks=30,
                                         downsample=downsample,
                                         alignment=alignment_train,
                                         max_epochs_for_iterations=1,
@@ -209,7 +209,6 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                      model=model,
                                      preprocess=preprocess,
                                      prepare_stacks=30,
-                                     num_iterations=1,
                                      downsample='1',
                                      alignment=alignment_infer,
                                      batch_size_al=8,
@@ -220,7 +219,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
         setOfTs = getattr(protInfer, protInfer._possibleOutputs.tiltSeries.name, None)
         return setOfTs
 
-    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False, preprocess:bool=False ) -> None:
+    def _checkTiltSeries(self, inTsSet: SetOfTiltSeries, eVTs=False, restacked=False, preprocess: bool = False) -> None:
         # Check the Tilt-series sets
         counts = self.anglesCountRestackDict if restacked else self.anglesCountDict
         self.checkTiltSeries(inTsSet,
@@ -243,20 +242,21 @@ class TestMissalignment(TestBaseCentralizedLayer):
                               eVTs=False,
                               restacked=False,
                               preprocess=False,
-                              alignment_train : str = 'G',
-                              alignment_infer : str = 'G',
-                              num_iterations=1,
-                              downsample:str='1'
+                              alignment_train: str = 'G',
+                              alignment_infer: str = 'G',
+                              downsample: str = '1',
+                              downsample_infer: int = '1',
+                              alignment_type=GLOBAL_LOCAL
                               ) -> None:
         # Run Training
         model = self._runMissalignmentTraining(inTsSet=inTsSet, tsSetMsg=tsSetMsg, preprocess=preprocess,
-                                               alignment_train=alignment_train, num_iterations=num_iterations,
-                                               downsample=downsample)
+                                               alignment_train=alignment_train,
+                                               downsample=downsample, alignment_type=alignment_type)
         # Check the model
         self._checkModel(model)
         # Run inference
-        setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model,preprocess=preprocess,
-                                              alignment_infer=alignment_infer)
+        setOfTs = self._runMissalignmentInfer(inTsSet=inTsSet, model=model, preprocess=preprocess,
+                                              alignment_infer=alignment_infer, downsample_infer=downsample_infer)
         # Check tilt-series with alignment infos
         self._checkTiltSeries(setOfTs, eVTs=eVTs, restacked=restacked, preprocess=preprocess)
 
@@ -271,16 +271,15 @@ class TestMissalignment(TestBaseCentralizedLayer):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='local al. only',
-                                   alignment_train = '3x3',
-                                   alignment_infer = '3x3')
+                                   alignment_train='3x3, 3x3',
+                                   alignment_infer='3x3')
 
-    # mixed ali-> check match between downsample values and alignemnts values
+    # mixed ali-> it aslo check match between downsample values and alignemnts values (local ali in this case)
     def testMissalignment_mix(self):
         importedTs = self._runPreviousProtocols()
         self._runTestMissalignment(inTsSet=importedTs,
                                    tsSetMsg='mixed al.',
                                    alignment_train='A G',
-                                   num_iterations=2,
                                    downsample='1',
                                    alignment_infer='3x3')
 
@@ -298,6 +297,7 @@ class TestMissalignment(TestBaseCentralizedLayer):
                                    tsSetMsg=self.EXC_VIEWS,
                                    eVTs=True
                                    )
+
     # restack
     def testMissalignment_EV_Restacked_Ts(self):
         importedTs = self._runPreviousProtocols(eVTs=True)
@@ -318,5 +318,16 @@ class TestMissalignment(TestBaseCentralizedLayer):
         self._runTestMissalignment(inTsSet=tsSetRestacked,
                                    tsSetMsg=self.RE_STACKED,
                                    restacked=True)
+
+    # check if the default al., that also has local grids, is modified on the fly when the global al. option is set
+    def testMissalignment_default(self):
+        importedTs = self._runPreviousProtocols()
+        self._runTestMissalignment(inTsSet=importedTs,
+                                   tsSetMsg='default+global al. only',
+                                   alignment_train='A G 3X3',
+                                   alignment_type=GLOBAL,
+                                   downsample='3',
+                                   downsample_infer='2'
+                                   )
 
     # add test with tomo rec and ctf
